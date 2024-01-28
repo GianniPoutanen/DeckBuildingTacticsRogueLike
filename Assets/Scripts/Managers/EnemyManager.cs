@@ -30,6 +30,7 @@ public class EnemyManager : MonoBehaviour
         if (instance == null)
         {
             instance = this;
+            SubscribeToEvents();
         }
         else
         {
@@ -38,18 +39,9 @@ public class EnemyManager : MonoBehaviour
     }
     #endregion Singleton Pattern
 
-    private void Start()
-    {
-        EventManager.Instance.AddListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
-    }
-
     private void OnDestroy()
     {
-        EventManager.Instance.RemoveListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+        UnsubscribeToEvents();
     }
 
 
@@ -86,6 +78,20 @@ public class EnemyManager : MonoBehaviour
     {
         if (entity is Enemy)
         enemies.Add((Enemy)entity);
+    }
+
+    public void SubscribeToEvents()
+    {
+        EventManager.Instance.AddListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
+        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.AddListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+    }
+
+    public void UnsubscribeToEvents()
+    {
+        EventManager.Instance.RemoveListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
+        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
     }
 
     #endregion Event Handlers
