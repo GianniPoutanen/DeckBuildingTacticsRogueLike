@@ -32,7 +32,6 @@ public class PlayerController : GridEntity
             {
                 if (currentTurn.Count > 0)
                 {
-                    PlayerManager.Instance.currentEnergy++;
                     currentTurn.Pop().Undo();
                 }
                 else
@@ -80,8 +79,11 @@ public class PlayerController : GridEntity
         // Check if the new target position is valid
         if (GridManager.Instance.IsFloorGridPositionEmpty(newTargetGridPosition))
         {
-            currentTurn.Push(new MoveGridEntity(this, targetGridPosition, newTargetGridPosition));
-            PlayerManager.Instance.currentEnergy--;
+            currentTurn.Push(new CompositeAction(
+                new List<IUndoRedoAction>() { new MoveGridEntity(this, targetGridPosition, newTargetGridPosition),
+                                              new UseEnergy(PlayerManager.Instance.currentEnergy - movementCost, PlayerManager.Instance.currentEnergy) },
+                this));
+            PlayerManager.Instance.currentEnergy -= movementCost;
             targetGridPosition = newTargetGridPosition;
             EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
         }
@@ -102,6 +104,10 @@ public class PlayerController : GridEntity
         currentTurn = new Stack<IUndoRedoAction>();
         EventManager.Instance.InvokeEvent(Enums.EventType.EndPlayerTurn);
     }
+
+    #region Undo Redo Action
+
+    #endregion Undo Redo Action
 
     #region Evemt Handlers
     public override void SubscribeToEvents()

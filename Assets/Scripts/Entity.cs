@@ -3,6 +3,7 @@ using UnityEngine;
 
 public abstract class Entity : MonoBehaviour
 {
+    public int Health;
     public virtual void Start()
     {
         EventManager.Instance.InvokeEvent<Entity>(Enums.EventType.EntitySpawned, this);

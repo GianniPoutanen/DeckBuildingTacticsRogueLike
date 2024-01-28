@@ -9,8 +9,6 @@ public class GridManager : MonoBehaviour
 
     private static GridManager instance;
 
-
-
     public static GridManager Instance
     {
         get
@@ -28,9 +26,22 @@ public class GridManager : MonoBehaviour
             return instance;
         }
     }
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
+            SubscribeToEvents();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     #endregion
 
+    public Grid grid;
     // Tile Maps
     public Tilemap floorTilemap;
     public Tilemap selectionTilemap;
@@ -40,14 +51,6 @@ public class GridManager : MonoBehaviour
     [Header("Tiles")]
     public Tile selectedTile;
     public Tile unselectedTile;
-
-
-
-    private void Start()
-    {
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
-    }
 
     void Update()
     {
@@ -64,8 +67,7 @@ public class GridManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+        UnsubscribeToEvents();
     }
 
 
@@ -96,6 +98,99 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    #region A*
+    // A* algorithm to find the path
+    public List<Vector3Int> FindPath(Vector3Int startCell, Vector3Int targetCell)
+    {
+        GridNode startNode = new GridNode(startCell);
+        GridNode targetNode = new GridNode(targetCell);
+
+        Heap<GridNode> openSet = new Heap<GridNode>();
+        HashSet<GridNode> closedSet = new HashSet<GridNode>();
+
+        openSet.Add(startNode);
+
+        while (openSet.Count > 0 && openSet.Count < 99999)
+        {
+            GridNode currentNode = openSet.RemoveFirst();
+            closedSet.Add(currentNode);
+
+            if (currentNode.Equals(targetNode))
+            {
+                return RetracePath(startNode, targetNode);
+            }
+
+            foreach (GridNode neighbor in GetNeighbours(currentNode))
+            {
+                if (closedSet.Contains(neighbor))
+                    continue;
+
+                int newCostToNeighbor = currentNode.GCost + GetDistance(currentNode, neighbor);
+
+                if (newCostToNeighbor < neighbor.GCost || !openSet.Contains(neighbor))
+                {
+                    neighbor.GCost = newCostToNeighbor;
+                    neighbor.HCost = GetDistance(neighbor, targetNode);
+                    neighbor.Parent = currentNode;
+
+                    if (!openSet.Contains(neighbor))
+                        openSet.Add(neighbor);
+                    else
+                        openSet.UpdateItem(neighbor);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    List<GridNode> GetNeighbours(GridNode node)
+    {
+        List<Vector3Int> neighbours = new List<Vector3Int>()
+        {
+            node.Position + new Vector3Int(1,0),
+            node.Position + new Vector3Int(-1,0),
+            node.Position + new Vector3Int(0,1),
+            node.Position + new Vector3Int(0,-1)
+        };
+        List<GridNode> returnList = new List<GridNode>();
+        foreach(Vector3Int neighbour in neighbours)
+        {
+            if (IsFloorGridPositionEmpty(neighbour))
+                returnList.Add(new GridNode(neighbour));
+        }
+        return returnList;
+    }
+
+    // Retrace the path from the start node to the target node
+    List<Vector3Int> RetracePath(GridNode startNode, GridNode targetNode)
+    {
+        List<Vector3Int> path = new List<Vector3Int>();
+        GridNode currentNode = targetNode;
+
+        while (currentNode != startNode)
+        {
+            path.Add(currentNode.Position);
+            currentNode = currentNode.Parent;
+        }
+
+        path.Reverse();
+        return path;
+    }
+
+    // Get the distance between two grid nodes
+    int GetDistance(GridNode nodeA, GridNode nodeB)
+    {
+        int dstX = Mathf.Abs(nodeA.Position.x - nodeB.Position.x);
+        int dstY = Mathf.Abs(nodeA.Position.y - nodeB.Position.y);
+
+        // Diagonal cost (if you allow diagonal movement)
+        if (dstX > dstY)
+            return 14 * dstY + 10 * (dstX - dstY);
+        return 14 * dstX + 10 * (dstY - dstX);
+    }
+    #endregion A*
+
     #region Event Handlers
 
     public void EntitySpawnedHandler(Entity entity)
@@ -108,6 +203,17 @@ public class GridManager : MonoBehaviour
     {
         if (entity is GridEntity)
             entities.Add((GridEntity)entity);
+    }
+
+    public void SubscribeToEvents()
+    {
+        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.AddListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+    }
+    public void UnsubscribeToEvents()
+    {
+        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
     }
 
     #endregion Event Handlers

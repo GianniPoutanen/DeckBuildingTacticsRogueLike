@@ -56,17 +56,182 @@ public class MoveGridEntity : IUndoRedoAction
     {
         gridEntity.transform.position = oldPosition;
         gridEntity.targetGridPosition = oldPosition;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
 
     public void Redo()
     {
         gridEntity.transform.position = newPosition;
         gridEntity.targetGridPosition = newPosition;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
     public Entity GetEntity()
     {
         return gridEntity;
+    }
+}
+
+public class UseEnergy : IUndoRedoAction
+{
+    private int newEnergyAmount = 0;
+    private int oldEnergyAmount = 0;
+    public UseEnergy(int newAmount, int oldAmount)
+    {
+        newEnergyAmount = newAmount;
+        oldEnergyAmount = oldAmount;
+    }
+
+    public Entity GetEntity()
+    {
+        return PlayerManager.Instance.player;
+    }
+
+    public void Redo()
+    {
+        PlayerManager.Instance.currentEnergy = newEnergyAmount;
+        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+    }
+
+    public void Undo()
+    {
+        PlayerManager.Instance.currentEnergy = oldEnergyAmount;
+        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+    }
+}
+public class AttackAction : IAttackAction
+{
+    private Entity attacker;
+    private Entity target;
+    private int beforeHealth;
+    private int afterHealth;
+    private int damage;
+
+    public AttackAction(Entity attacker, Entity target, int damage)
+    {
+        this.attacker = attacker;
+        this.target = target;
+        this.beforeHealth = target.Health;
+        this.afterHealth = Mathf.Max(0, target.Health - damage);
+        this.damage = damage;
+    }
+
+    public void ExecuteAttack()
+    {
+        // Logic to perform the attack
+        // Example: Deal damage to the target entity
+        Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
+        target.Health = afterHealth;
+        // Additional logic can be added based on your game's combat system
+    }
+
+    public void Undo()
+    {
+        // Logic to undo the attack
+        // Example: Revert the damage done to the target entity
+        Debug.Log($"Undoing attack on {target.name}.");
+        target.Health = beforeHealth;
+        // Additional undo logic based on your game's mechanics
+    }
+
+    public void Redo()
+    {
+        // Logic to redo the attack
+        // Example: Reapply damage to the target entity
+        Debug.Log($"Redoing attack on {target.name}.");
+        target.Health = afterHealth;
+        // Additional redo logic based on your game's mechanics
+    }
+    public Entity GetEntity()
+    {
+        return attacker;
+    }
+}
+
+public class HealAction : IHealAction
+{
+    private Entity healer;
+    private Entity target;
+    private int beforeHealth;
+    private int afterHealth;
+    private int healingAmount;
+
+    public HealAction(Entity healer, Entity target, int healingAmount)
+    {
+        this.healer = healer;
+        this.target = target;
+        this.beforeHealth = target.Health;
+        this.afterHealth = target.Health + healingAmount;
+        this.healingAmount = healingAmount;
+    }
+
+    public void ExecuteHeal()
+    {
+        // Logic to perform the healing
+        // Example: Heal the target entity
+        Debug.Log($"{healer.name} heals {target.name} for {healingAmount} health.");
+        target.Health += healingAmount;
+        afterHealth = target.Health;
+        // Additional healing logic based on your game's mechanics
+    }
+
+    public void Undo()
+    {
+        // Logic to undo the healing
+        // Example: Revert the healing done to the target entity
+        Debug.Log($"Undoing healing on {target.name}.");
+        target.Health = beforeHealth;
+        // Additional undo logic based on your game's mechanics
+    }
+
+    public void Redo()
+    {
+        // Logic to redo the healing
+        // Example: Reapply healing to the target entity
+        Debug.Log($"Redoing healing on {target.name}.");
+        target.Health = afterHealth;
+        // Additional redo logic based on your game's mechanics
+    }
+    public Entity GetEntity()
+    {
+        return healer;
+    }
+}
+
+public class UseAbilityAction : IUseAbilityAction
+{
+    private Entity user;
+    private Vector3 abilityTargetPosition;
+
+    public UseAbilityAction(Entity user, Vector3 abilityTargetPosition)
+    {
+        this.user = user;
+        this.abilityTargetPosition = abilityTargetPosition;
+    }
+
+    public void ExecuteAbility()
+    {
+        // Logic to perform the ability
+        // Example: Use a special ability at the target position
+        Debug.Log($"{user.name} uses an ability at position {abilityTargetPosition}.");
+        // Additional ability logic based on your game's mechanics
+    }
+
+    public void Undo()
+    {
+        // Logic to undo the ability
+        // Example: Revert the effects of the ability
+        Debug.Log($"Undoing ability used by {user.name}.");
+        // Additional undo logic based on your game's mechanics
+    }
+
+    public void Redo()
+    {
+        // Logic to redo the ability
+        // Example: Reapply the effects of the ability
+        Debug.Log($"Redoing ability used by {user.name}.");
+        // Additional redo logic based on your game's mechanics
+    }
+
+    public Entity GetEntity()
+    {
+        return user;
     }
 }
