@@ -22,6 +22,10 @@ public class PlayerController : GridEntity
 
     public override void Update()
     {
+        if(EventManager.Instance.EventsRunning)
+        {
+            return;
+        }
         base.Update();
         // Check for keyboard input and update the target grid position accordingly
         if (_state == PlayerStates.PlayerTurn)
@@ -36,7 +40,7 @@ public class PlayerController : GridEntity
                 }
                 else
                 {
-                    UndoRedoManager.Instance.Undo();
+                    UndoRedoManager.Instance.UndoToPlayer();
                     PlayerManager.Instance.currentEnergy = PlayerManager.Instance.maxEnergy;
                 }
             }
@@ -75,13 +79,12 @@ public class PlayerController : GridEntity
     {
         // Calculate the new target grid position
         Vector3Int newTargetGridPosition = targetGridPosition + direction;
-        Debug.Log(newTargetGridPosition);
         // Check if the new target position is valid
         if (GridManager.Instance.IsFloorGridPositionEmpty(newTargetGridPosition))
         {
             currentTurn.Push(new CompositeAction(
-                new List<IUndoRedoAction>() { new MoveGridEntity(this, targetGridPosition, newTargetGridPosition),
-                                              new UseEnergy(PlayerManager.Instance.currentEnergy - movementCost, PlayerManager.Instance.currentEnergy) },
+                new List<IUndoRedoAction>() { new MoveGridEntityAction(this, targetGridPosition, newTargetGridPosition),
+                                              new UseEnergyAction(PlayerManager.Instance.currentEnergy - movementCost, PlayerManager.Instance.currentEnergy) },
                 this));
             PlayerManager.Instance.currentEnergy -= movementCost;
             targetGridPosition = newTargetGridPosition;
@@ -91,7 +94,7 @@ public class PlayerController : GridEntity
 
     private void CheckEndTurn()
     {
-        if (PlayerManager.Instance.currentEnergy == 0)
+        if (PlayerManager.Instance.currentEnergy == 0 && _state != PlayerStates.Waiting)
         {
             PlayerEndTurn();
         }
@@ -124,6 +127,7 @@ public class PlayerController : GridEntity
     public void EndEnemyTurnHandler()
     {
         _state = PlayerStates.PlayerTurn;
+        PlayerManager.Instance.currentEnergy = PlayerManager.Instance.maxEnergy;
     }
     #endregion Evemt Handlers
 }

@@ -38,14 +38,14 @@ public class CompositeAction : IUndoRedoAction
 /// <summary>
 /// GRID ENTITY ACTIONS
 /// </summary>
-public class MoveGridEntity : IUndoRedoAction
+public class MoveGridEntityAction : IUndoRedoAction
 {
     private GridEntity gridEntity;
     private Vector3Int oldPosition;
     private Vector3Int newPosition;
     private Entity entity;
 
-    public MoveGridEntity(GridEntity entity, Vector3Int oldPosition, Vector3Int newPosition)
+    public MoveGridEntityAction(GridEntity entity, Vector3Int oldPosition, Vector3Int newPosition)
     {
         this.gridEntity = entity;
         this.oldPosition = oldPosition;
@@ -69,11 +69,11 @@ public class MoveGridEntity : IUndoRedoAction
     }
 }
 
-public class UseEnergy : IUndoRedoAction
+public class UseEnergyAction : IUndoRedoAction
 {
     private int newEnergyAmount = 0;
     private int oldEnergyAmount = 0;
-    public UseEnergy(int newAmount, int oldAmount)
+    public UseEnergyAction(int newAmount, int oldAmount)
     {
         newEnergyAmount = newAmount;
         oldEnergyAmount = oldAmount;

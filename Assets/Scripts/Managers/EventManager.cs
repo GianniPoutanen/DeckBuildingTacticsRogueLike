@@ -32,6 +32,8 @@ public class EventManager : MonoBehaviour
     private readonly Dictionary<Enums.EventType, Delegate> eventVariabledDelegateDictionary = new Dictionary<Enums.EventType, Delegate>();
     private readonly Dictionary<Enums.EventType, Delegate> eventDictionary = new Dictionary<Enums.EventType, Delegate>();
 
+    public bool EventsRunning = false;
+
     #region Event Handling With Parameters
     // Method to add a listener for a specific event type with parameters
     public void AddListener<T>(Enums.EventType eventType, Action<T> action)
@@ -90,11 +92,12 @@ public class EventManager : MonoBehaviour
     // Method to invoke an event for a specific event type with parameters
     public void InvokeEvent(Enums.EventType eventType)
     {
-        Debug.Log(eventType.ToString());
+        EventsRunning = true;
         if (eventDictionary.ContainsKey(eventType))
         {
             (eventDictionary[eventType] as Action)?.Invoke();
         }
+        EventsRunning = false;
     }
     #endregion Event Handling Without Parameters
 

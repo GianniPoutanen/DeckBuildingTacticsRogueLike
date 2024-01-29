@@ -12,6 +12,9 @@ public static class Enums
         EndEnemyTurn,
         EndPlayerTurn,
         TurnTickComplete,
-        UpdateUI
+        UpdateUI,
+        CardStartDragging, 
+        CardEndDragging,
+        CardPlayed,
     }
 }

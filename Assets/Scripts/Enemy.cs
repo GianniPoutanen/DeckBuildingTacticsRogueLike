@@ -10,25 +10,28 @@ public class Enemy : GridEntity
     public IEnumerator DoTurn()
     {
         pathIndex++;
-
-        if (currentPath.Count == 0 || GridManager.Instance.GetGridPositionFromWorldPoint(PlayerManager.Instance.player.transform.position) != currentPath.Last())
-            FindPathToPlayer();
-        StepTowardsGridPosition(currentPath[pathIndex]);
+        FindPathToPlayer();
+        if (currentPath.Count > 0 && !GridManager.Instance.HasEntitiesAtPosition(currentPath.First()))
+            StepTowardsGridPosition(currentPath.First());
         yield return null;
     }
 
     public void StepTowardsGridPosition(Vector3Int nextGridPosition)
     {
-        UndoRedoManager.Instance.AddUndoAction(new MoveGridEntity(this, targetGridPosition, nextGridPosition));
+        UndoRedoManager.Instance.AddUndoAction(new MoveGridEntityAction(this, targetGridPosition, nextGridPosition));
+        Debug.Log("Moving from " + targetGridPosition + " to " + nextGridPosition);
         targetGridPosition = nextGridPosition;
     }
 
     void FindPathToPlayer()
     {
-        Vector3Int startCell = GridManager.Instance.GetGridPositionFromWorldPoint(transform.position);
-        Vector3Int targetCell = GridManager.Instance.GetGridPositionFromWorldPoint(PlayerManager.Instance.player.transform.position);
-
-        currentPath = GridManager.Instance.FindPath(startCell, targetCell);
+        Vector3Int startCell = GridManager.Instance.GetGridPositionFromWorldPoint(this.targetGridPosition);
+        Vector3Int targetCell = GridManager.Instance.GetGridPositionFromWorldPoint(PlayerManager.Instance.player.targetGridPosition);
+        currentPath = GridManager.Instance.FindPath(startCell, targetCell, new List<string>());
+        string path = "";
+        foreach (var p in currentPath)
+            path += p + " ";
+        Debug.Log(path);
         pathIndex = 0;
     }
 

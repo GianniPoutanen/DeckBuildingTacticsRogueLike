@@ -4,7 +4,19 @@ using UnityEngine;
 
 public class GridNode : IHeapItem<GridNode>
 {
-    public Vector3Int Position;
+    private Vector3Int _pos;
+    public Vector3Int Position
+    {
+        get
+        {
+            return new Vector3Int(_pos.x, _pos.y, 0);
+        }
+        set
+        {
+            _pos = value;
+        }
+    }
+
     public int GCost;
     public int HCost;
     public GridNode Parent;
@@ -23,15 +35,17 @@ public class GridNode : IHeapItem<GridNode>
         int compare = FCost.CompareTo(other.FCost);
         if (compare == 0)
             compare = HCost.CompareTo(other.HCost);
-        return -compare;
+        return compare;
     }
 
     public override bool Equals(object obj)
     {
-        if (obj is GridNode)
-        {
-            return this.Position.Equals((obj as GridNode).Position);
-        }
-        return false;
+        return (obj as GridNode).Position.Equals(this.Position);
     }
+
+    public override int GetHashCode()
+    {
+        return (Position.x * 7) + (Position.y * 11);
+    }
+
 }

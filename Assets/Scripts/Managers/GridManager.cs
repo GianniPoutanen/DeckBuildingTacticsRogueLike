@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using UnityEngine.UIElements;
 
 public class GridManager : MonoBehaviour
 {
@@ -60,8 +62,11 @@ public class GridManager : MonoBehaviour
             Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             Vector3Int selectedGridPosition = GetGridPositionFromWorldPoint(mouseWorldPos);
             List<Vector3Int> selectedGridPositions = new List<Vector3Int>();
+
             selectedGridPositions.Add(new Vector3Int(selectedGridPosition.x, selectedGridPosition.y, 0));
+            selectedGridPositions.AddRange(FindPath(selectedGridPosition, PlayerManager.Instance.player.targetGridPosition));
             UpdateSelectedTilemap(selectedGridPositions);
+
         }
     }
 
@@ -99,52 +104,72 @@ public class GridManager : MonoBehaviour
     }
 
     #region A*
-    // A* algorithm to find the path
-    public List<Vector3Int> FindPath(Vector3Int startCell, Vector3Int targetCell)
-    {
-        GridNode startNode = new GridNode(startCell);
-        GridNode targetNode = new GridNode(targetCell);
 
-        Heap<GridNode> openSet = new Heap<GridNode>();
+
+
+    public List<Vector3Int> FindPath(Vector3Int startPos, Vector3Int targetPos, List<string> entityMask)
+    {
+        GridNode startNode = new GridNode(startPos);
+        GridNode targetNode = new GridNode(targetPos);
+        return FindPath(startNode, targetNode, entityMask);
+    }
+
+    public List<Vector3Int> FindPath(Vector3Int startPos, Vector3Int targetPos)
+    {
+        GridNode startNode = new GridNode(startPos);
+        GridNode targetNode = new GridNode(targetPos);
+        return FindPath(startNode, targetNode, new List<string>());
+    }
+
+    public List<Vector3Int> FindPath(GridNode startNode, GridNode targetNode, List<string> entityMask)
+    {
+        List<Vector3Int> path = new List<Vector3Int>();
+
+        MinHeap<GridNode> openSet = new MinHeap<GridNode>();
         HashSet<GridNode> closedSet = new HashSet<GridNode>();
 
         openSet.Add(startNode);
 
-        while (openSet.Count > 0 && openSet.Count < 99999)
+        while (openSet.Count > 0)
         {
-            GridNode currentNode = openSet.RemoveFirst();
+            GridNode currentNode = openSet.RemoveMin();
             closedSet.Add(currentNode);
+
+            if (closedSet.Count > 5000)
+            {
+                break;
+            }
 
             if (currentNode.Equals(targetNode))
             {
-                return RetracePath(startNode, targetNode);
+                path = RetracePath(startNode, currentNode);
+                return path;
             }
 
-            foreach (GridNode neighbor in GetNeighbours(currentNode))
+            foreach (GridNode neighbor in GetValidNeighbours(currentNode, entityMask))
             {
                 if (closedSet.Contains(neighbor))
                     continue;
-
+                
                 int newCostToNeighbor = currentNode.GCost + GetDistance(currentNode, neighbor);
+                neighbor.Parent = currentNode;
 
                 if (newCostToNeighbor < neighbor.GCost || !openSet.Contains(neighbor))
                 {
                     neighbor.GCost = newCostToNeighbor;
                     neighbor.HCost = GetDistance(neighbor, targetNode);
-                    neighbor.Parent = currentNode;
 
                     if (!openSet.Contains(neighbor))
                         openSet.Add(neighbor);
-                    else
-                        openSet.UpdateItem(neighbor);
                 }
             }
         }
 
-        return null;
+        return path; // No path found
     }
 
-    List<GridNode> GetNeighbours(GridNode node)
+
+    public List<GridNode> GetValidNeighbours(GridNode node, List<string> entityMask)
     {
         List<Vector3Int> neighbours = new List<Vector3Int>()
         {
@@ -154,16 +179,16 @@ public class GridManager : MonoBehaviour
             node.Position + new Vector3Int(0,-1)
         };
         List<GridNode> returnList = new List<GridNode>();
-        foreach(Vector3Int neighbour in neighbours)
+        foreach (Vector3Int neighbour in neighbours)
         {
-            if (IsFloorGridPositionEmpty(neighbour))
+            if (FloorTileExhists(neighbour) && !HasEntitiesAtPosition(neighbour, entityMask))
                 returnList.Add(new GridNode(neighbour));
         }
         return returnList;
     }
 
     // Retrace the path from the start node to the target node
-    List<Vector3Int> RetracePath(GridNode startNode, GridNode targetNode)
+    public static List<Vector3Int> RetracePath(GridNode startNode, GridNode targetNode)
     {
         List<Vector3Int> path = new List<Vector3Int>();
         GridNode currentNode = targetNode;
@@ -172,6 +197,7 @@ public class GridManager : MonoBehaviour
         {
             path.Add(currentNode.Position);
             currentNode = currentNode.Parent;
+            if (currentNode == null) break;
         }
 
         path.Reverse();
@@ -179,15 +205,13 @@ public class GridManager : MonoBehaviour
     }
 
     // Get the distance between two grid nodes
-    int GetDistance(GridNode nodeA, GridNode nodeB)
+    public static int GetDistance(GridNode nodeA, GridNode nodeB)
     {
         int dstX = Mathf.Abs(nodeA.Position.x - nodeB.Position.x);
         int dstY = Mathf.Abs(nodeA.Position.y - nodeB.Position.y);
 
-        // Diagonal cost (if you allow diagonal movement)
-        if (dstX > dstY)
-            return 14 * dstY + 10 * (dstX - dstY);
-        return 14 * dstX + 10 * (dstY - dstX);
+        // Manhattan distance
+        return dstX + dstY;
     }
     #endregion A*
 
@@ -219,6 +243,28 @@ public class GridManager : MonoBehaviour
     #endregion Event Handlers
 
     #region Helper functions
+    // Check if any entities inhabit a given grid position
+    public bool HasEntitiesAtPosition(Vector3Int gridPosition, List<string> entityMask)
+    {
+        // Loop through each entity
+        foreach (GridEntity entity in entities)
+        {
+            // Get the entity's position in world coordinates
+            Vector3 entityPosition = entity.targetGridPosition;
+
+            // Convert the entity's position to grid coordinates
+            Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
+
+            // Check if the entity is at the given grid position
+            if (entityGridPosition == gridPosition && entityMask.Contains(entity.tag))
+            {
+                // There is an entity at the given position
+                return true;
+            }
+        }
+        // No entities found at the given position
+        return false;
+    }
 
     // Check if any entities inhabit a given grid position
     public bool HasEntitiesAtPosition(Vector3Int gridPosition)
