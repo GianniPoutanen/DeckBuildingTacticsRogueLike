@@ -81,18 +81,18 @@ public class UseEnergyAction : IUndoRedoAction
 
     public Entity GetEntity()
     {
-        return PlayerManager.Instance.player;
+        return PlayerManager.Instance.Player;
     }
 
     public void Redo()
     {
-        PlayerManager.Instance.currentEnergy = newEnergyAmount;
+        PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
         EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
 
     public void Undo()
     {
-        PlayerManager.Instance.currentEnergy = oldEnergyAmount;
+        PlayerManager.Instance.CurrentEnergy = oldEnergyAmount;
         EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
 }
@@ -233,5 +233,30 @@ public class UseAbilityAction : IUseAbilityAction
     public Entity GetEntity()
     {
         return user;
+    }
+}
+
+public class PlayerCardAction : IUndoRedoAction
+{
+    private Card card;
+
+    public PlayerCardAction(Card card)
+    {
+
+    }
+
+    public Entity GetEntity()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Redo()
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public void Undo()
+    {
+        throw new System.NotImplementedException();
     }
 }

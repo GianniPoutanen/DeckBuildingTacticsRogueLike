@@ -64,7 +64,7 @@ public class GridManager : MonoBehaviour
             List<Vector3Int> selectedGridPositions = new List<Vector3Int>();
 
             selectedGridPositions.Add(new Vector3Int(selectedGridPosition.x, selectedGridPosition.y, 0));
-            selectedGridPositions.AddRange(FindPath(selectedGridPosition, PlayerManager.Instance.player.targetGridPosition));
+            selectedGridPositions.AddRange(FindPath(selectedGridPosition, PlayerManager.Instance.Player.targetGridPosition));
             UpdateSelectedTilemap(selectedGridPositions);
 
         }

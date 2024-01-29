@@ -3,22 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static Enums;
 
 public class PlayerController : GridEntity
 {
     int movementCost = 1;
 
     // Current Turn
-    private Stack<IUndoRedoAction> currentTurn = new Stack<IUndoRedoAction>();
+    public Stack<IUndoRedoAction> CurrentActions = new Stack<IUndoRedoAction>();
 
-
-    private enum PlayerStates
-    {
-        Waiting,
-        PlayerTurn,
-    }
-    [SerializeField]
-    private PlayerStates _state = PlayerStates.PlayerTurn;
 
     public override void Update()
     {
@@ -28,20 +21,20 @@ public class PlayerController : GridEntity
         }
         base.Update();
         // Check for keyboard input and update the target grid position accordingly
-        if (_state == PlayerStates.PlayerTurn)
+        if (PlayerManager.Instance.State == PlayerStates.PlayerTurn)
         {
             HandleInput();
             // Example: Undo and redo actions using keyboard shortcuts
             if (Input.GetKeyDown(KeyCode.Z))
             {
-                if (currentTurn.Count > 0)
+                if (CurrentActions.Count > 0)
                 {
-                    currentTurn.Pop().Undo();
+                    CurrentActions.Pop().Undo();
                 }
                 else
                 {
                     UndoRedoManager.Instance.UndoToPlayer();
-                    PlayerManager.Instance.currentEnergy = PlayerManager.Instance.maxEnergy;
+                    PlayerManager.Instance.CurrentEnergy = PlayerManager.Instance.maxEnergy;
                 }
             }
 
@@ -50,8 +43,6 @@ public class PlayerController : GridEntity
                 UndoRedoManager.Instance.Redo();
             }
         }
-
-        CheckEndTurn();
     }
 
     private void HandleInput()
@@ -82,31 +73,16 @@ public class PlayerController : GridEntity
         // Check if the new target position is valid
         if (GridManager.Instance.IsFloorGridPositionEmpty(newTargetGridPosition))
         {
-            currentTurn.Push(new CompositeAction(
+            CurrentActions.Push(new CompositeAction(
                 new List<IUndoRedoAction>() { new MoveGridEntityAction(this, targetGridPosition, newTargetGridPosition),
-                                              new UseEnergyAction(PlayerManager.Instance.currentEnergy - movementCost, PlayerManager.Instance.currentEnergy) },
+                                              new UseEnergyAction(PlayerManager.Instance.CurrentEnergy - movementCost, PlayerManager.Instance.CurrentEnergy) },
                 this));
-            PlayerManager.Instance.currentEnergy -= movementCost;
+            PlayerManager.Instance.CurrentEnergy -= movementCost;
             targetGridPosition = newTargetGridPosition;
             EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
         }
     }
 
-    private void CheckEndTurn()
-    {
-        if (PlayerManager.Instance.currentEnergy == 0 && _state != PlayerStates.Waiting)
-        {
-            PlayerEndTurn();
-        }
-    }
-
-    private void PlayerEndTurn()
-    {
-        _state = PlayerStates.Waiting;
-        UndoRedoManager.Instance.AddUndoAction(new CompositeAction(currentTurn.ToList(), this));
-        currentTurn = new Stack<IUndoRedoAction>();
-        EventManager.Instance.InvokeEvent(Enums.EventType.EndPlayerTurn);
-    }
 
     #region Undo Redo Action
 
@@ -126,8 +102,8 @@ public class PlayerController : GridEntity
 
     public void EndEnemyTurnHandler()
     {
-        _state = PlayerStates.PlayerTurn;
-        PlayerManager.Instance.currentEnergy = PlayerManager.Instance.maxEnergy;
+        PlayerManager.Instance.State = PlayerStates.PlayerTurn;
+        PlayerManager.Instance.CurrentEnergy = PlayerManager.Instance.maxEnergy;
     }
     #endregion Evemt Handlers
 }

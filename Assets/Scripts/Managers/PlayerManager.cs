@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using static Enums;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -20,7 +22,7 @@ public class PlayerManager : MonoBehaviour
                     GameObject obj = new GameObject();
                     obj.name = typeof(PlayerManager).Name;
                     instance = obj.AddComponent<PlayerManager>();
-                    instance.player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerController>();
+                    instance.Player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerController>();
                 }
             }
             return instance;
@@ -32,22 +34,50 @@ public class PlayerManager : MonoBehaviour
     // Add your player-related variables and state here
     public int playerHealth = 100;
     public int maxEnergy = 2;
-    public int currentEnergy = 2;
+    private int _energy = 2;
+
+    public PlayerStates State = PlayerStates.PlayerTurn;
+
+    [SerializeField]
+    public int CurrentEnergy
+    {
+        get { return _energy; }
+        set
+        {
+            _energy = value;
+            EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+        }
+    }
 
     // Example player object
-    public PlayerController player;
+    public PlayerController Player;
 
     private void Start()
     {
+        CurrentEnergy = maxEnergy;
         // You can perform any necessary initialization here
-        player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerController>();
+        Player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerController>();
         SubscribeToEvents();
+    }
+
+    private void Update()
+    {
+        CheckEndTurn();
     }
 
     private void OnDestroy()
     {
         instance = null;
         UnsubscribeToEvents();
+    }
+
+
+    private void CheckEndTurn()
+    {
+        if (CurrentEnergy == 0 && State != PlayerStates.Waiting)
+        {
+            PlayerEndTurn();
+        }
     }
 
     // Example method to handle when the player takes damage
@@ -76,7 +106,19 @@ public class PlayerManager : MonoBehaviour
     }
 
 
-    #region Evemt Handlers
+    public void PlayerEndTurn()
+    {
+        if (Player != null)
+        {
+            UndoRedoManager.Instance.AddUndoAction(new CompositeAction(Player.CurrentActions.ToList(), Player));
+            Player.CurrentActions = new Stack<IUndoRedoAction>();
+        }
+        EventManager.Instance.InvokeEvent(Enums.EventType.EndPlayerTurn);
+    }
+
+
+
+    #region Event Handlers
     public void SubscribeToEvents()
     {
         EventManager.Instance.AddListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
@@ -88,9 +130,9 @@ public class PlayerManager : MonoBehaviour
 
     public void EndEnemyTurnHandler()
     {
-        currentEnergy = maxEnergy;
+        CurrentEnergy = maxEnergy;
         EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
 
-    #endregion Evemt Handlers
+    #endregion Event Handlers
 }

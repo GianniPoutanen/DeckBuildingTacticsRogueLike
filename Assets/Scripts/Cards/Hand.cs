@@ -36,7 +36,7 @@ public class Hand : MonoBehaviour
     void Start()
     {
         // Assuming you have a Card instance named "exampleCard"
-        Card exampleCard = new Card();
+        Card exampleCard = new Card(1);
         SpawnCard(exampleCard);
         SpawnCard(exampleCard);
         SpawnCard(exampleCard);
@@ -68,8 +68,8 @@ public class Hand : MonoBehaviour
 
             //Raycast using the Graphics Raycaster and mouse click position
             raycaster.Raycast(pointerEventData, results);
-
-            if (results.Count > 0)
+            bool cardAlreadyUnderMouse = results.Find(x => x.gameObject.GetComponent<CardUI>() != null && x.gameObject.GetComponent<CardUI>() == cardUnderMouse).isValid;
+            if (results.Count > 0 && !cardAlreadyUnderMouse)
             {
                 UIUnderMouse = true;
                 foreach (RaycastResult result in results)
@@ -124,7 +124,7 @@ public class Hand : MonoBehaviour
         // Calculate the position of the card in the hand based on the index
         float totalWidth = cardsInHand.Count * cardSpacing;
         float startX = (-totalWidth / 2f) + (cardSpacing / 2);
-        return new Vector2(startX + cardIndex * cardSpacing, 0f) + (draggingCard ? draggingOffset : Vector2.zero);
+        return new Vector2(startX + cardIndex * cardSpacing, 0f) + (draggingCard ? draggingOffset  : Vector2.zero);
     }
 
     // Call this function when a card is played or removed from the hand
@@ -177,15 +177,23 @@ public class Hand : MonoBehaviour
         draggingCard = false;
     }
 
+    public void CardPlayedHandler(Card card)
+    {
+        SortCards();
+        UpdateCardPositions();
+    }
+
     public void SubscribeToEvents()
     {
         EventManager.Instance.AddListener<CardUI>(Enums.EventType.CardStartDragging, CardStartDraggingHandler);
         EventManager.Instance.AddListener<CardUI>(Enums.EventType.CardEndDragging, CardEndDraggingHandler);
+        EventManager.Instance.AddListener<Card>(Enums.EventType.CardPlayed, CardPlayedHandler);
     }
     public void UnsubscribeToEvents()
     {
         EventManager.Instance.RemoveListener<CardUI>(Enums.EventType.CardStartDragging, CardStartDraggingHandler);
         EventManager.Instance.RemoveListener<CardUI>(Enums.EventType.CardEndDragging, CardEndDraggingHandler);
+        EventManager.Instance.RemoveListener<Card>(Enums.EventType.CardPlayed, CardPlayedHandler);
     }
 
     #endregion Event Handlers

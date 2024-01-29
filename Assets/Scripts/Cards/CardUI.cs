@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -11,14 +12,18 @@ public class CardUI : MonoBehaviour, IDragHandler, IEndDragHandler, IPointerDown
 
     private RectTransform rectTransform;
     private Vector2 originalLocalPosition;
+    [Header("UI Elemetns")]
+    public TextMeshProUGUI tmpText;
 
     [Header("Positioning and Movement")]
     public float moveSpeed = 5f; // Adjust this value based on your preference
+
 
     private void Start()
     {
         originalLocalPosition = (Vector2)transform.localPosition;
         rectTransform = GetComponent<RectTransform>();
+        tmpText.text = card.cardName;
     }
 
     private void Update()
@@ -28,7 +33,7 @@ public class CardUI : MonoBehaviour, IDragHandler, IEndDragHandler, IPointerDown
         transform.localPosition = newLocalPosition;
 
         float distanceToMouse = Vector2.Distance(transform.position, Input.mousePosition);
-        this.rectTransform.localPosition += new Vector3(0, 0, Mathf.RoundToInt(-distanceToMouse));
+        this.rectTransform.localPosition += new Vector3(0, 0, (Mathf.RoundToInt(-distanceToMouse) / 50f) + (UIManager.Instance.hand.cardUnderMouse == this ? -10f : 0f));
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -40,7 +45,7 @@ public class CardUI : MonoBehaviour, IDragHandler, IEndDragHandler, IPointerDown
     public void OnEndDrag(PointerEventData eventData)
     {
         // Check if the card is dropped within a valid target area
-        if (Vector2.Distance(transform.position, (Vector2)transform.parent.position + targetLocalPosition) < 500f)
+        if (!UIManager.Instance.hand.UIUnderMouse)
         {
             TryPlayCard();
         }
@@ -65,8 +70,9 @@ public class CardUI : MonoBehaviour, IDragHandler, IEndDragHandler, IPointerDown
         {
             // Perform actions to play the card
             card.Play();
-            EventManager.Instance.InvokeEvent(Enums.EventType.CardPlayed, this);
-
+            EventManager.Instance.InvokeEvent(Enums.EventType.CardPlayed, card);
+            UIManager.Instance.hand.cardsInHand.Remove(this);
+            Destroy(this.gameObject);
             // Optionally, you can implement additional logic here
             // for example, removing the card from the player's hand.
         }

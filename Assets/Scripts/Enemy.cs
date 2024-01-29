@@ -26,7 +26,7 @@ public class Enemy : GridEntity
     void FindPathToPlayer()
     {
         Vector3Int startCell = GridManager.Instance.GetGridPositionFromWorldPoint(this.targetGridPosition);
-        Vector3Int targetCell = GridManager.Instance.GetGridPositionFromWorldPoint(PlayerManager.Instance.player.targetGridPosition);
+        Vector3Int targetCell = GridManager.Instance.GetGridPositionFromWorldPoint(PlayerManager.Instance.Player.targetGridPosition);
         currentPath = GridManager.Instance.FindPath(startCell, targetCell, new List<string>());
         string path = "";
         foreach (var p in currentPath)

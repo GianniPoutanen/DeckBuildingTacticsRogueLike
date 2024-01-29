@@ -45,4 +45,5 @@ public class UIManager : MonoBehaviour
 
     public RectTransform rectTransform;
     public Canvas canvas;
+    public Hand hand;
 }
