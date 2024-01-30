@@ -5,8 +5,11 @@ using UnityEngine;
 
 public class Enemy : GridEntity
 {
+    public int maxEnergy = 1;
+    public int currentEnergy;
     public int pathIndex = 0;
     public List<Vector3Int> currentPath = new List<Vector3Int>();
+
     public IEnumerator DoTurn()
     {
         pathIndex++;
@@ -18,8 +21,15 @@ public class Enemy : GridEntity
 
     public void StepTowardsGridPosition(Vector3Int nextGridPosition)
     {
-        UndoRedoManager.Instance.AddUndoAction(new MoveGridEntityAction(this, targetGridPosition, nextGridPosition));
-        Debug.Log("Moving from " + targetGridPosition + " to " + nextGridPosition);
+        MoveGridEntityAction action = new MoveGridEntityAction()
+        {
+            Performer = this,
+            target = this,
+            newPosition = nextGridPosition,
+            oldPosition = targetGridPosition
+        };
+
+        UndoRedoManager.Instance.AddUndoAction(action);
         targetGridPosition = nextGridPosition;
     }
 

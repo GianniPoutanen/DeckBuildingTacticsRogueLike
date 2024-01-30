@@ -110,8 +110,8 @@ public class PlayerManager : MonoBehaviour
     {
         if (Player != null)
         {
-            UndoRedoManager.Instance.AddUndoAction(new CompositeAction(Player.CurrentActions.ToList(), Player));
-            Player.CurrentActions = new Stack<IUndoRedoAction>();
+            UndoRedoManager.Instance.AddUndoAction(new CompositeAction() { actions = Player.CurrentActions.ToList() });
+            Player.CurrentActions = new Stack<Ability>();
         }
         EventManager.Instance.InvokeEvent(Enums.EventType.EndPlayerTurn);
     }

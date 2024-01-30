@@ -77,7 +77,7 @@ public class GridManager : MonoBehaviour
 
 
     // Update the tilemap to reflect the selected tiles
-    private void UpdateSelectedTilemap(List<Vector3Int> selectedGridPositions)
+    public void UpdateSelectedTilemap(List<Vector3Int> selectedGridPositions)
     {
         BoundsInt bounds = floorTilemap.cellBounds;
 
@@ -150,7 +150,7 @@ public class GridManager : MonoBehaviour
             {
                 if (closedSet.Contains(neighbor))
                     continue;
-                
+
                 int newCostToNeighbor = currentNode.GCost + GetDistance(currentNode, neighbor);
                 neighbor.Parent = currentNode;
 
@@ -232,17 +232,113 @@ public class GridManager : MonoBehaviour
     public void SubscribeToEvents()
     {
         EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
     }
     public void UnsubscribeToEvents()
     {
         EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
     }
 
     #endregion Event Handlers
 
     #region Helper functions
+
+    public GridEntity GetEntityOnPosition(Vector3Int gridPosition)
+    {
+        return GetEntityOnPosition(gridPosition, new List<string>());
+    }
+
+    public GridEntity GetEntityOnPosition(Vector3Int gridPosition, List<string> entityMask)
+    {
+        // Loop through each entity
+        foreach (GridEntity entity in entities)
+        {
+            // Get the entity's position in world coordinates
+            Vector3 entityPosition = entity.targetGridPosition;
+
+            // Convert the entity's position to grid coordinates
+            Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
+
+            // Check if the entity is at the given grid position
+            if (gridPosition == entityGridPosition && entityMask.Contains(entity.tag))
+            {
+                return entity;
+            }
+        }
+        return null;
+    }
+
+
+
+    public List<GridEntity> GetEntitiesOnPositions(List<Vector3Int> gridPositions)
+    {
+        return GetEntitiesOnPositions(gridPositions, new List<string>());
+    }
+
+    public List<GridEntity> GetEntitiesOnPositions(List<Vector3Int> gridPositions, List<string> entityMask)
+    {
+        List<GridEntity> entities = new List<GridEntity>();
+
+        // Loop through each entity
+        foreach (GridEntity entity in entities)
+        {
+            // Get the entity's position in world coordinates
+            Vector3 entityPosition = entity.targetGridPosition;
+
+            // Convert the entity's position to grid coordinates
+            Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
+
+            // Check if the entity is at the given grid position
+            if (gridPositions.Contains(entityGridPosition) && entityMask.Contains(entity.tag))
+            {
+                entities.Add(entity);
+            }
+        }
+        return entities;
+    }
+
+    public List<Vector3Int> GetValidPositionsInDistance(Vector3Int position, int distance, bool includingDiagonalMovement, List<string> entityMask)
+    {
+        List<Vector3Int> allPositions = GetPositionsInDistance(position, distance, includingDiagonalMovement);
+        List<Vector3Int> results = new List<Vector3Int>();
+
+        foreach (Vector3Int pos in allPositions)
+        {
+            int walkDistance = (FindPath(position, pos).Count - 1);
+            if (walkDistance <= distance)
+            {
+                results.Add(pos);
+            }
+        }
+        return results;
+    }
+
+    public List<Vector3Int> GetValidPositionsInDistance(Vector3Int position, int distance, bool includingDiagonalMovement = false)
+    {
+        return GetValidPositionsInDistance(position, distance, includingDiagonalMovement, new List<string>());
+    }
+
+
+    public List<Vector3Int> GetPositionsInDistance(Vector3Int position, int distance, bool includingDiagonalMovement)
+    {
+        List<Vector3Int> result = new List<Vector3Int>();
+
+        for (int i = -distance; i <= distance; i++)
+        {
+            for (int j = -distance; j <= distance; j++)
+            {
+                if (includingDiagonalMovement || (i != 0 && j != 0 && Mathf.Abs(i) + Mathf.Abs(j) <= distance))
+                {
+                    Vector3Int newPos = position + new Vector3Int(i, j, 0);
+                    result.Add(newPos);
+                }
+            }
+        }
+
+        return result;
+    }
+
     // Check if any entities inhabit a given grid position
     public bool HasEntitiesAtPosition(Vector3Int gridPosition, List<string> entityMask)
     {
@@ -288,6 +384,75 @@ public class GridManager : MonoBehaviour
         // No entities found at the given position
         return false;
     }
+
+    public List<Vector3Int> GetPositionsInCone(Vector3Int targetPosition, int distance, float coneAngle)
+    {
+        List<Vector3Int> positionsInCone = new List<Vector3Int>();
+
+        // Iterate over a square area around the target position
+        for (int i = -distance; i <= distance; i++)
+        {
+            for (int j = -distance; j <= distance; j++)
+            {
+                Vector3Int currentPosition = targetPosition + new Vector3Int(i, j, 0);
+
+                // Calculate the angle between the current position and the target position
+                float angleToCurrentPosition = Vector2.SignedAngle(Vector2.up, new Vector2(currentPosition.x - targetPosition.x, currentPosition.y - targetPosition.y));
+
+                // Check if the current position is within the cone angle
+                if (Mathf.Abs(angleToCurrentPosition) <= coneAngle / 2f)
+                {
+                    positionsInCone.Add(currentPosition);
+                }
+            }
+        }
+
+        return positionsInCone;
+    }
+
+    public List<Vector3Int> GetPositionsInArea(Vector3Int targetPosition, int areaSize)
+    {
+        List<Vector3Int> positionsInArea = new List<Vector3Int>();
+
+        // Iterate over a square area around the target position
+        for (int i = -areaSize; i <= areaSize; i++)
+        {
+            for (int j = -areaSize; j <= areaSize; j++)
+            {
+                Vector3Int currentPosition = targetPosition + new Vector3Int(i, j, 0);
+                positionsInArea.Add(currentPosition);
+            }
+        }
+
+        return positionsInArea;
+    }
+
+    public List<Vector3Int> GetPositionsInStraightLine(Vector3Int targetPosition, Vector2 direction, int distance)
+    {
+        List<Vector3Int> positionsInLine = new List<Vector3Int>();
+
+        // Ensure the direction is normalized
+        Vector2Int calculatedDirection = new Vector2Int(Mathf.RoundToInt(direction.normalized.x), Mathf.RoundToInt(direction.normalized.y));
+
+        // Iterate over the specified distance in both horizontal and vertical directions
+        for (int i = 1; i <= distance; i++)
+        {
+            // Horizontal movement
+            Vector3Int horizontalPosition = targetPosition + new Vector3Int(calculatedDirection.x * i, 0, 0);
+            positionsInLine.Add(horizontalPosition);
+
+            // Vertical movement
+            Vector3Int verticalPosition = targetPosition + new Vector3Int(0, calculatedDirection.y * i, 0);
+            positionsInLine.Add(verticalPosition);
+
+            // Diagonal movement
+            Vector3Int diagonalPosition = targetPosition + new Vector3Int(calculatedDirection.x * i, calculatedDirection.y * i, 0);
+            positionsInLine.Add(diagonalPosition);
+        }
+
+        return positionsInLine;
+    }
+
 
     public Vector3Int GetGridPositionFromWorldPoint(Vector3 worldPosition)
     {

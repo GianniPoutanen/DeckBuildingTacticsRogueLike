@@ -36,7 +36,7 @@ public class Hand : MonoBehaviour
     void Start()
     {
         // Assuming you have a Card instance named "exampleCard"
-        Card exampleCard = new Card(1);
+        Card exampleCard = new Card() { cost = 1 };
         SpawnCard(exampleCard);
         SpawnCard(exampleCard);
         SpawnCard(exampleCard);

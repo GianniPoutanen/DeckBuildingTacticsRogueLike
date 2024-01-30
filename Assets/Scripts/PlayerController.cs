@@ -10,7 +10,7 @@ public class PlayerController : GridEntity
     int movementCost = 1;
 
     // Current Turn
-    public Stack<IUndoRedoAction> CurrentActions = new Stack<IUndoRedoAction>();
+    public Stack<Ability> CurrentActions = new Stack<Ability>();
 
 
     public override void Update()
@@ -73,10 +73,12 @@ public class PlayerController : GridEntity
         // Check if the new target position is valid
         if (GridManager.Instance.IsFloorGridPositionEmpty(newTargetGridPosition))
         {
-            CurrentActions.Push(new CompositeAction(
-                new List<IUndoRedoAction>() { new MoveGridEntityAction(this, targetGridPosition, newTargetGridPosition),
-                                              new UseEnergyAction(PlayerManager.Instance.CurrentEnergy - movementCost, PlayerManager.Instance.CurrentEnergy) },
-                this));
+            CurrentActions.Push(new CompositeAction()
+            {
+                actions = new List<Ability>(){ new MoveGridEntityAction() { target = this, oldPosition = targetGridPosition, newPosition = newTargetGridPosition },
+                                              new UseEnergyAction() { amount = movementCost } }
+            });
+                
             PlayerManager.Instance.CurrentEnergy -= movementCost;
             targetGridPosition = newTargetGridPosition;
             EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
