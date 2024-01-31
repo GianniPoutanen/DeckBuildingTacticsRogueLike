@@ -8,6 +8,7 @@ public class CardUI : MonoBehaviour, IDragHandler, IEndDragHandler, IPointerDown
 
     public Vector2 followPosition;
     public Vector2 targetLocalPosition; // Target position is now local to the parent
+    [SerializeField]
     public Card card;
 
     private RectTransform rectTransform;
@@ -66,7 +67,7 @@ public class CardUI : MonoBehaviour, IDragHandler, IEndDragHandler, IPointerDown
     private void TryPlayCard()
     {
         // Check if the card can be played
-        if (card != null && card.CanPlay())
+        if (card != null && card.range > 0 ? card.CanPlay(GridManager.Instance.GetGridPositionFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition))) : card.CanPlay(PlayerManager.Instance.Player.targetGridPosition))
         {
             // Perform actions to play the card
             card.Play();
@@ -75,6 +76,10 @@ public class CardUI : MonoBehaviour, IDragHandler, IEndDragHandler, IPointerDown
             Destroy(this.gameObject);
             // Optionally, you can implement additional logic here
             // for example, removing the card from the player's hand.
+        }
+        else
+        {
+            Debug.Log("Couldn't play card");
         }
     }
 }

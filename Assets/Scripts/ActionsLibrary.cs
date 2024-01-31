@@ -1,18 +1,71 @@
 
+using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
-public class CompositeAction : IUndoRedoAction
+public abstract class Ability : ScriptableObject, IUndoRedoAction
 {
-    private List<IUndoRedoAction> actions = new List<IUndoRedoAction>();
-    private Entity entity;
-    public CompositeAction(List<IUndoRedoAction> actions, Entity entity)
+    [HideInInspector]
+    public GridEntity _performer = null;
+    [HideInInspector]
+    public GridEntity Performer { get { return _performer; } set { _performer = value; } }
+
+
+    public virtual void Redo()
     {
-        this.actions = actions;
-        this.entity = entity;
+        throw new NotImplementedException();
+    }
+
+    public virtual void Undo()
+    {
+        throw new NotImplementedException();
+    }
+    public virtual void Perform(Vector3Int position)
+    {
+        throw new NotImplementedException();
+    }
+
+    public virtual bool CanPlay(Vector3Int position)
+    {
+        return true;
+    }
+}
+
+[System.Serializable]
+public class AbilityWrapper : IUndoRedoAction
+{
+    public Ability ability;
+
+    public AbilityWrapper(Ability action)
+    {
+        this.ability = action;
+    }
+
+    public GridEntity Performer { get { return ability.Performer; } set { ability.Performer = value; } }
+
+    public void Perform(Vector3Int position)
+    {
+        ability.Perform(position);
+    }
+
+    public void Redo()
+    {
+        ability.Redo();
     }
 
     public void Undo()
+    {
+        ability.Undo();
+    }
+}
+
+public class CompositeAction : Ability
+{
+    public List<Ability> actions = new List<Ability>();
+
+    public override void Undo()
     {
         for (int i = 0; i <= actions.Count - 1; i++)
         {
@@ -20,7 +73,7 @@ public class CompositeAction : IUndoRedoAction
         }
     }
 
-    public void Redo()
+    public override void Redo()
     {
         for (int i = 0; i < actions.Count; i++)
         {
@@ -28,9 +81,26 @@ public class CompositeAction : IUndoRedoAction
         }
     }
 
-    public Entity GetEntity()
+    public override void Perform(Vector3Int position)
     {
-        return entity;
+        for (int i = 0; i < actions.Count; i++)
+        {
+            actions[i].Perform(position);
+        }
+    }
+
+    public override bool CanPlay(Vector3Int pos)
+    {
+        bool result = true;
+        foreach (Ability action in actions)
+        {
+            if (!action.CanPlay(pos))
+            {
+                result = false;
+                break;
+            }
+        }
+        return result;
     }
 }
 
@@ -38,225 +108,416 @@ public class CompositeAction : IUndoRedoAction
 /// <summary>
 /// GRID ENTITY ACTIONS
 /// </summary>
-public class MoveGridEntityAction : IUndoRedoAction
+public class MoveGridEntityAction : Ability
 {
-    private GridEntity gridEntity;
-    private Vector3Int oldPosition;
-    private Vector3Int newPosition;
-    private Entity entity;
+    public GridEntity target;
+    public Vector3Int oldPosition;
+    public Vector3Int newPosition;
 
-    public MoveGridEntityAction(GridEntity entity, Vector3Int oldPosition, Vector3Int newPosition)
+
+    public override void Undo()
     {
-        this.gridEntity = entity;
-        this.oldPosition = oldPosition;
-        this.newPosition = newPosition;
+        target.transform.position = oldPosition;
+        target.targetGridPosition = oldPosition;
     }
 
-    public void Undo()
+    public override void Redo()
     {
-        gridEntity.transform.position = oldPosition;
-        gridEntity.targetGridPosition = oldPosition;
+        target.transform.position = newPosition;
+        target.targetGridPosition = newPosition;
     }
 
-    public void Redo()
+    public override void Perform(Vector3Int position)
     {
-        gridEntity.transform.position = newPosition;
-        gridEntity.targetGridPosition = newPosition;
+        Debug.Log("Moving " + target + " from " + oldPosition + " to " + newPosition);
+        target.targetGridPosition = newPosition;
     }
-    public Entity GetEntity()
+
+    public override bool CanPlay(Vector3Int position)
     {
-        return gridEntity;
+        return target.CanMoveTo(position);
     }
 }
 
-public class UseEnergyAction : IUndoRedoAction
+public class UseEnergyAction : Ability
 {
-    private int newEnergyAmount = 0;
-    private int oldEnergyAmount = 0;
-    public UseEnergyAction(int newAmount, int oldAmount)
+    private int newEnergyAmount;
+    private int oldEnergyAmount;
+    public int amount = 0;
+
+    public override void Perform(Vector3Int position)
     {
-        newEnergyAmount = newAmount;
-        oldEnergyAmount = oldAmount;
+        oldEnergyAmount = PlayerManager.Instance.CurrentEnergy;
+        newEnergyAmount = PlayerManager.Instance.CurrentEnergy - amount;
+        PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
+        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
 
-    public Entity GetEntity()
-    {
-        return PlayerManager.Instance.Player;
-    }
-
-    public void Redo()
+    public override void Redo()
     {
         PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
         EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
 
-    public void Undo()
+    public override void Undo()
     {
         PlayerManager.Instance.CurrentEnergy = oldEnergyAmount;
         EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
     }
+
+    public override bool CanPlay(Vector3Int position)
+    {
+        return PlayerManager.Instance.CurrentEnergy - amount >= 0;
+    }
 }
-public class AttackAction : IAttackAction
+
+#region Attack Abilities
+[CreateAssetMenu(menuName = "Actions/Attack Action")]
+public class AttackAbility : Ability
 {
-    private Entity attacker;
-    private Entity target;
+    [HideInInspector]
+    public GridEntity attacker;
+    [HideInInspector]
+    public GridEntity target;
     private int beforeHealth;
     private int afterHealth;
-    private int damage;
+    private int beforeArmour;
+    private int afterArmour;
+    public bool piercing = false;
+    public int damage;
 
-    public AttackAction(Entity attacker, Entity target, int damage)
-    {
-        this.attacker = attacker;
-        this.target = target;
-        this.beforeHealth = target.Health;
-        this.afterHealth = Mathf.Max(0, target.Health - damage);
-        this.damage = damage;
-    }
 
-    public void ExecuteAttack()
+    public override void Undo()
     {
-        // Logic to perform the attack
-        // Example: Deal damage to the target entity
-        Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
-        target.Health = afterHealth;
-        // Additional logic can be added based on your game's combat system
-    }
-
-    public void Undo()
-    {
-        // Logic to undo the attack
-        // Example: Revert the damage done to the target entity
         Debug.Log($"Undoing attack on {target.name}.");
         target.Health = beforeHealth;
-        // Additional undo logic based on your game's mechanics
     }
 
-    public void Redo()
+    public override void Redo()
     {
-        // Logic to redo the attack
-        // Example: Reapply damage to the target entity
         Debug.Log($"Redoing attack on {target.name}.");
         target.Health = afterHealth;
-        // Additional redo logic based on your game's mechanics
     }
-    public Entity GetEntity()
+    public override void Perform(Vector3Int position)
     {
-        return attacker;
+        target = GridManager.Instance.GetEntityOnPosition(position);
+
+        Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
+        beforeArmour = target.Armour;
+        beforeHealth = target.Health;
+        if (piercing)
+            target.PierceDamage(damage);
+        else
+            target.Damage(damage);
+        afterArmour = target.Armour;
+        afterHealth = target.Health;
+    }
+
+    public override bool CanPlay(Vector3Int position)
+    {
+        target = GridManager.Instance.GetEntityOnPosition(position);
+        return target != null;
     }
 }
 
-public class HealAction : IHealAction
+[CreateAssetMenu(menuName = "Actions/Cleave Attack Action")]
+public class CleaveAttackAction : Ability
 {
-    private Entity healer;
-    private Entity target;
+    [HideInInspector]
+    public GridEntity attacker;
+    [HideInInspector]
+    public List<GridEntity> targets;
+    private Dictionary<GridEntity, int> beforeHealth = new Dictionary<GridEntity, int>();
+    private Dictionary<GridEntity, int> afterHealth = new Dictionary<GridEntity, int>();
+    public int damage;
+    public int distance = 2;
+
+    public override void Undo()
+    {
+        foreach (var target in targets)
+        {
+            Debug.Log($"Undoing attack on {target.name}.");
+            target.Health = beforeHealth[target];
+        }
+    }
+
+    public override void Redo()
+    {
+        foreach (var target in targets)
+        {
+            Debug.Log($"Redoing attack on {target.name}.");
+            target.Health = afterHealth[target];
+        }
+    }
+    public override void Perform(Vector3Int position)
+    {
+
+
+        foreach (var target in targets)
+        {
+            Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
+            beforeHealth.Add(target, target.Health);
+            target.Damage(damage);
+            afterHealth.Add(target, target.Health);
+        }
+    }
+
+    public override bool CanPlay(Vector3Int position)
+    {
+        if (attacker != null)
+        {
+            float angle = 0;
+            // TODO add grid manager logic for cleaving in cone
+            GridManager.Instance.GetPositionsInCone(attacker.targetGridPosition, distance, angle);
+            targets = GridManager.Instance.GetEntitiesOnPositions(GridManager.Instance.GetPositionsInCone(attacker.targetGridPosition, distance, angle));
+            return targets.Count > 0;
+
+        }
+        return false;
+    }
+}
+
+[CreateAssetMenu(menuName = "Actions/Straight Attack Action")]
+public class StraightAttackAction : Ability
+{
+    [HideInInspector]
+    public GridEntity attacker;
+    [HideInInspector]
+    public List<GridEntity> targets;
+    private Dictionary<GridEntity, int> beforeHealth = new Dictionary<GridEntity, int>();
+    private Dictionary<GridEntity, int> afterHealth = new Dictionary<GridEntity, int>();
+    public int damage;
+
+
+    public override void Undo()
+    {
+        foreach (var target in targets)
+        {
+            Debug.Log($"Undoing attack on {target.name}.");
+            target.Health = beforeHealth[target];
+        }
+    }
+
+    public override void Redo()
+    {
+        foreach (var target in targets)
+        {
+            Debug.Log($"Redoing attack on {target.name}.");
+            target.Health = afterHealth[target];
+        }
+    }
+    public override void Perform(Vector3Int position)
+    {
+        foreach (var target in targets)
+        {
+            Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
+            beforeHealth.Add(target, target.Health);
+            target.Damage(damage);
+            afterHealth.Add(target, target.Health);
+        }
+    }
+
+    public override bool CanPlay(Vector3Int position)
+    {
+        return targets.Count > 0;
+    }
+}
+
+
+#endregion Attack Abilities
+
+#region Healing / Shielding Abilities
+[CreateAssetMenu(menuName = "Heal Or Shield/Heal Action")]
+public class HealAction : Ability
+{
+    [HideInInspector]
+    public GridEntity healer;
+    [HideInInspector]
+    public GridEntity target;
     private int beforeHealth;
     private int afterHealth;
-    private int healingAmount;
+    public int healingAmount;
 
-    public HealAction(Entity healer, Entity target, int healingAmount)
-    {
-        this.healer = healer;
-        this.target = target;
-        this.beforeHealth = target.Health;
-        this.afterHealth = target.Health + healingAmount;
-        this.healingAmount = healingAmount;
-    }
 
-    public void ExecuteHeal()
+    public override void Undo()
     {
-        // Logic to perform the healing
-        // Example: Heal the target entity
-        Debug.Log($"{healer.name} heals {target.name} for {healingAmount} health.");
-        target.Health += healingAmount;
-        afterHealth = target.Health;
-        // Additional healing logic based on your game's mechanics
-    }
-
-    public void Undo()
-    {
-        // Logic to undo the healing
-        // Example: Revert the healing done to the target entity
         Debug.Log($"Undoing healing on {target.name}.");
         target.Health = beforeHealth;
-        // Additional undo logic based on your game's mechanics
     }
 
-    public void Redo()
+    public override void Redo()
     {
-        // Logic to redo the healing
-        // Example: Reapply healing to the target entity
         Debug.Log($"Redoing healing on {target.name}.");
         target.Health = afterHealth;
-        // Additional redo logic based on your game's mechanics
     }
-    public Entity GetEntity()
+
+    public override void Perform(Vector3Int position)
     {
-        return healer;
+        target = GridManager.Instance.GetEntityOnPosition(position);
+
+        Debug.Log($"{healer.name} heals {target.name} for {healingAmount} health.");
+        beforeHealth = target.Health;
+        target.Heal(healingAmount);
+        afterHealth = target.Health;
     }
 }
 
-public class UseAbilityAction : IUseAbilityAction
+[CreateAssetMenu(menuName = "Heal Or Shield/Shield Action")]
+public class ShieldAction : Ability
 {
-    private Entity user;
-    private Vector3 abilityTargetPosition;
+    [HideInInspector]
+    public GridEntity shielder;
+    [HideInInspector]
+    public GridEntity target;
+    private int beforeArmour;
+    private int afterArmour;
+    public int armourAmount;
 
-    public UseAbilityAction(Entity user, Vector3 abilityTargetPosition)
+
+    public override void Undo()
     {
-        this.user = user;
-        this.abilityTargetPosition = abilityTargetPosition;
+        Debug.Log($"Undoing armour on {target.name}.");
+        target.Armour = beforeArmour;
     }
 
-    public void ExecuteAbility()
+    public override void Redo()
     {
-        // Logic to perform the ability
-        // Example: Use a special ability at the target position
-        Debug.Log($"{user.name} uses an ability at position {abilityTargetPosition}.");
-        // Additional ability logic based on your game's mechanics
+        Debug.Log($"Redoing armour on {target.name}.");
+        target.Armour = afterArmour;
     }
 
-    public void Undo()
+    public override void Perform(Vector3Int position)
     {
-        // Logic to undo the ability
-        // Example: Revert the effects of the ability
-        Debug.Log($"Undoing ability used by {user.name}.");
-        // Additional undo logic based on your game's mechanics
-    }
+        target = GridManager.Instance.GetEntityOnPosition(position);
 
-    public void Redo()
-    {
-        // Logic to redo the ability
-        // Example: Reapply the effects of the ability
-        Debug.Log($"Redoing ability used by {user.name}.");
-        // Additional redo logic based on your game's mechanics
-    }
-
-    public Entity GetEntity()
-    {
-        return user;
+        Debug.Log($"{shielder.Armour} shields {target.name} for {armourAmount} health.");
+        beforeArmour = target.Health;
+        target.Shield(armourAmount);
+        afterArmour = target.Armour;
     }
 }
 
-public class PlayerCardAction : IUndoRedoAction
+[CreateAssetMenu(menuName = "Heal Or Shield/Heal Group Action")]
+public class HealGroupAction : Ability
+{
+    [HideInInspector]
+    public GridEntity healer;
+    [HideInInspector]
+    public List<GridEntity> targets;
+    private Dictionary<GridEntity, int> beforeHealthDict;
+    private Dictionary<GridEntity, int> afterHealthDict;
+    public int healingAmount;
+
+    public override void Undo()
+    {
+        Debug.Log($"Undoing healing on all targets.");
+        foreach (GridEntity target in targets)
+        {
+            target.Health = beforeHealthDict[target];
+        }
+    }
+
+    public override void Redo()
+    {
+        Debug.Log($"Redoing healing on all targets.");
+        foreach (GridEntity target in targets)
+        {
+            target.Health = afterHealthDict[target];
+        }
+    }
+
+    public override void Perform(Vector3Int position)
+    {
+        beforeHealthDict = new Dictionary<GridEntity, int>();
+        afterHealthDict = new Dictionary<GridEntity, int>();
+
+        foreach (GridEntity target in targets)
+        {
+            Debug.Log($"{healer.name} heals {target.name} for {healingAmount} health.");
+            beforeHealthDict.Add(target, target.Health);
+            target.Heal(healingAmount);
+            afterHealthDict.Add(target, target.Health);
+        }
+    }
+}
+
+[CreateAssetMenu(menuName = "Heal Or Shield/Shield Group Action")]
+public class ShieldGroupAction : Ability
+{
+    [HideInInspector]
+    public GridEntity shielder;
+    [HideInInspector]
+    public List<GridEntity> targets;
+    private Dictionary<GridEntity, int> beforeArmourDict;
+    private Dictionary<GridEntity, int> afterArmourDict;
+    public int armourAmount;
+
+    public override void Undo()
+    {
+        Debug.Log($"Undoing armour on all targets.");
+        foreach (GridEntity target in targets)
+        {
+            target.Armour = beforeArmourDict[target];
+        }
+    }
+
+    public override void Redo()
+    {
+        Debug.Log($"Redoing armour on all targets.");
+        foreach (GridEntity target in targets)
+        {
+            target.Armour = afterArmourDict[target];
+        }
+    }
+
+    public override void Perform(Vector3Int position)
+    {
+        beforeArmourDict = new Dictionary<GridEntity, int>();
+        afterArmourDict = new Dictionary<GridEntity, int>();
+
+        foreach (GridEntity target in targets)
+        {
+            Debug.Log($"{shielder.Armour} shields {target.name} for {armourAmount} health.");
+            beforeArmourDict.Add(target, target.Armour);
+            target.Shield(armourAmount);
+            afterArmourDict.Add(target, target.Armour);
+        }
+    }
+}
+
+#endregion Healing / Shielding Abilities
+
+
+public class CardPlayedAction : Ability, IUndoRedoAction
 {
     private Card card;
 
-    public PlayerCardAction(Card card)
+    public CardPlayedAction(Card card)
     {
-
+        this.card = card;
     }
 
-    public Entity GetEntity()
+    public override void Perform(Vector3Int position)
     {
-        throw new System.NotImplementedException();
+        foreach (var action in card.abilities)
+        {
+            action.Perform(position);
+        }
     }
 
-    public void Redo()
+    public override void Undo()
     {
-        throw new System.NotImplementedException();
+        for (int i = card.abilities.Length - 1; i >= 0; i--)
+        {
+            card.abilities[i].Undo();
+        }
     }
 
-    public void Undo()
+    public override void Redo()
     {
-        throw new System.NotImplementedException();
+        foreach (var action in card.abilities)
+        {
+            action.Redo();
+        }
     }
 }

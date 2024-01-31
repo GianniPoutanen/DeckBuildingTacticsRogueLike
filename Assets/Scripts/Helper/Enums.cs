@@ -17,7 +17,7 @@ public static class Enums
         EndPlayerTurn,
         //Entity
         EntitySpawned,
-        Entitydestroyed,
+        EntityDestroyed,
 
         // Enemy 
         EndEnemyTurn,
@@ -29,4 +29,12 @@ public static class Enums
         PlayerTurn,
     }
 
+    public enum CastType
+    {
+        Simple,
+        WithinDistance,
+        Cone,
+        Area,
+        // Add more cast types if needed
+    }
 }

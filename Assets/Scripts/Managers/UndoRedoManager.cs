@@ -57,7 +57,7 @@ public class UndoRedoManager : MonoBehaviour
         {
 
             IUndoRedoAction action = undoStack.Pop();
-            if (action.GetEntity() != PlayerManager.Instance.Player)
+            if (action.Performer != PlayerManager.Instance.Player)
             {
                 action.Undo();
                 redoStack.Push(action);

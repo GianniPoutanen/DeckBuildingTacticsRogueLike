@@ -84,14 +84,14 @@ public class EnemyManager : MonoBehaviour
     {
         EventManager.Instance.AddListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
         EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
     }
 
     public void UnsubscribeToEvents()
     {
         EventManager.Instance.RemoveListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
         EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.Entitydestroyed, EntityDestroyedHandler);
+        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
     }
 
     #endregion Event Handlers
