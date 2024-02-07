@@ -224,11 +224,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b65bf888d2e5b54e92cff88b15257c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  targetSizeFactor: 1
+  sizeFactor: 1
+  growthSpeed: 6
   dragging: 0
   followPosition: {x: 0, y: 0}
   targetLocalPosition: {x: 0, y: 0}
+  card: {fileID: 0}
   tmpText: {fileID: 4005890958952777721}
   moveSpeed: 5
+  currentSizeFactor: 0
 --- !u!61 &4911690174486410183
 BoxCollider2D:
   m_ObjectHideFlags: 0

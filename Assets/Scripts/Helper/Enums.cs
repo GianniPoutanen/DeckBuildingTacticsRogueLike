@@ -6,6 +6,9 @@ public static class Enums
 {
     public enum EventType
     {
+        // Game Related
+        GameStart,
+
         // Player
         PlayerDamageTaken,
         TurnTickComplete,
@@ -13,6 +16,8 @@ public static class Enums
         CardStartDragging,
         CardEndDragging,
         CardPlayed,
+
+        DeckShuffled,
 
         EndPlayerTurn,
         //Entity
@@ -22,7 +27,10 @@ public static class Enums
         // Enemy 
         EndEnemyTurn,
         UpdateUI,
+        AttackQueued,
+        AttackDequeued,
     }
+
     public enum PlayerStates
     {
         Waiting,

@@ -131,26 +131,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 648474922103271653, guid: 325491918a5afc5458c7158a86090a37, type: 3}
-      propertyPath: cardSpacing
-      value: 80
-      objectReference: {fileID: 0}
-    - target: {fileID: 648474922103271653, guid: 325491918a5afc5458c7158a86090a37, type: 3}
-      propertyPath: initialPosition.y
-      value: -60
-      objectReference: {fileID: 0}
-    - target: {fileID: 648474922103271653, guid: 325491918a5afc5458c7158a86090a37, type: 3}
-      propertyPath: cursorFloatingYAmount
-      value: 100
-      objectReference: {fileID: 0}
     - target: {fileID: 3960329562022334567, guid: 325491918a5afc5458c7158a86090a37, type: 3}
       propertyPath: hand
       value: 
       objectReference: {fileID: 2139664831}
-    - target: {fileID: 5454978884695334132, guid: 325491918a5afc5458c7158a86090a37, type: 3}
-      propertyPath: m_Sprite
-      value: 
-      objectReference: {fileID: -476319386, guid: 6f3d8ecbf33e43b4ab7c805dab5e54ba, type: 3}
     - target: {fileID: 7793335125621857571, guid: 325491918a5afc5458c7158a86090a37, type: 3}
       propertyPath: m_AnchorMax.y
       value: 1

@@ -1,50 +1,58 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Burst.CompilerServices;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using static Enums;
 
-public class Hand : MonoBehaviour
+public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
+    private enum HandState
+    {
+        Idle,
+        Focused,
+        PlayingCard
+    }
+    private HandState state;
+    public bool mouseInHand;
+
     [Header("Cards")]
     public GameObject cardPrefab;
     public List<CardUI> cardsInHand = new List<CardUI>();
-    public float cardSpacing = 150f;
+    public CardUI cardBeingPlayed;
+
+    public RectTransform cardSpawnPosition;
+    private Deck PlayerDeck { get { return PlayerManager.Instance.activeDeck; } }
+    private Deck DiscardPile { get { return PlayerManager.Instance.discardPile; } }
+
 
     [Header("Cards Positioning Variables")]
     public Vector2 initialPosition = new Vector2(0f, 0f);
     public Vector2 draggingOffset = new Vector2(0f, 50f);
     public float cursorFloatingYAmount = 50f;
+    public float idleCardYSinkAmount = 50f;
+    public float cardSpacing = 150f;
 
     [Header("Selection Under Mouse")]
     public bool UIUnderMouse = false;
     public CardUI cardUnderMouse;
 
-    [Header("Parent Variables")]
-    public GraphicRaycaster raycaster;
 
     // While dragging or playing
     public bool draggingCard = false;
-
+    private RectTransform rectTransform;
     private void Awake()
     {
+        rectTransform = this.GetComponent<RectTransform>();
         SubscribeToEvents();
     }
 
     // Example usage:
     void Start()
     {
-        // Assuming you have a Card instance named "exampleCard"
-        Card exampleCard = new Card() { cost = 1 };
-        SpawnCard(exampleCard);
-        SpawnCard(exampleCard);
-        SpawnCard(exampleCard);
-        SpawnCard(exampleCard);
-        SpawnCard(exampleCard);
-        SpawnCard(exampleCard);
-        SpawnCard(exampleCard);
-        SpawnCard(exampleCard);
+        DrawCardsToHand(2);
     }
 
     private void OnDestroy()
@@ -55,48 +63,81 @@ public class Hand : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // Check for the card under the mouse during drag
-        if (EventSystem.current.IsPointerOverGameObject())
+        UpdateCardPositions();
+        SetState();
+        SetHandWidth();
+    }
+
+    public void SetHandWidth()
+    {
+        this.rectTransform.sizeDelta = new Vector2((cardPrefab.GetComponent<RectTransform>().sizeDelta * cardsInHand.Count + new Vector2(50f, 0)).x, this.rectTransform.sizeDelta.y);
+    }
+
+    public void SetState()
+    {
+        if (cardBeingPlayed != null)
         {
-            //Set up the new Pointer Event
-            var pointerEventData = new PointerEventData(EventSystem.current);
-            //Set the Pointer Event Position to that of the game object
-            pointerEventData.position = Input.mousePosition;
-
-            //Create a list of Raycast Results
-            List<RaycastResult> results = new List<RaycastResult>();
-
-            //Raycast using the Graphics Raycaster and mouse click position
-            raycaster.Raycast(pointerEventData, results);
-            bool cardAlreadyUnderMouse = results.Find(x => x.gameObject.GetComponent<CardUI>() != null && x.gameObject.GetComponent<CardUI>() == cardUnderMouse).isValid;
-            if (results.Count > 0 && !cardAlreadyUnderMouse)
-            {
-                UIUnderMouse = true;
-                foreach (RaycastResult result in results)
-                {
-                    Debug.Log(result.distance);
-                    if (result.gameObject.GetComponent<CardUI>() != null )
-                    {
-                        CardUI hitCard = result.gameObject.GetComponent<CardUI>();
-                        if (hitCard != null && cardsInHand.Contains(hitCard))
-                        {
-                            cardUnderMouse = hitCard;
-                            UpdateCardPositions();
-                        }
-                    }
-                }
-            }
-            else
-            {
-                UIUnderMouse = false;
-            }
+            state = HandState.PlayingCard;
+        }
+        else if (mouseInHand)
+        {
+            state = HandState.Focused;
         }
         else
         {
-            cardUnderMouse = null;
-            UpdateCardPositions();
+            state = HandState.Idle;
         }
+    }
 
+    public void DrawCardsToHand(int numCards)
+    {
+        for (int i = 0; i < numCards; i++)
+        {
+            DrawCardToHand();
+        }
+    }
+
+    // Example: Call this method to draw a card from the deck
+    public void DrawCardToHand()
+    {
+        if (PlayerDeck.Cards.Count > 0)
+        {
+            DrawCardFromPlayerDeck();
+        }
+        else if (DiscardPile.Cards.Count > 0)
+        {
+            PlayerDeck.AddCards(DiscardPile.Cards);
+            PlayerDeck.Shuffle();
+            DiscardPile.Cards.Clear();
+            DrawCardFromPlayerDeck();
+        }
+        else
+        {
+            Debug.Log("Failed to draw a card. Deck and discard pile are empty.");
+        }
+    }
+
+    private void DrawCardFromPlayerDeck()
+    {
+        Card drawnCard = PlayerDeck.DrawCard();
+
+        if (drawnCard != null)
+        {
+            SpawnCard((drawnCard));
+            Debug.Log("Drew a card: " + drawnCard.cardName);
+        }
+        else
+        {
+            Debug.Log("Failed to draw a card.");
+        }
+        UndoRedoManager.Instance.AddUndoAction(new DrawCardAction(drawnCard));
+    }
+
+    public void RemoveCard(Card card)
+    {
+        CardUI obj = this.cardsInHand.Find(x => x.card.Equals(card));
+        this.cardsInHand.Remove(obj);
+        Destroy(obj.gameObject);
     }
 
     public void SpawnCard(Card card)
@@ -114,6 +155,10 @@ public class Hand : MonoBehaviour
 
         // Set the card data
         cardUI.card = card;
+        cardUI.sizeFactor = UIManager.Instance.CardSpawnSize;
+
+        if (cardSpawnPosition != null)
+            cardUI.transform.position = cardSpawnPosition.position;
 
         // Add the card to the list
         cardsInHand.Add(cardUI);
@@ -124,7 +169,7 @@ public class Hand : MonoBehaviour
         // Calculate the position of the card in the hand based on the index
         float totalWidth = cardsInHand.Count * cardSpacing;
         float startX = (-totalWidth / 2f) + (cardSpacing / 2);
-        return new Vector2(startX + cardIndex * cardSpacing, 0f) + (draggingCard ? draggingOffset  : Vector2.zero);
+        return new Vector2(startX + cardIndex * cardSpacing, 0f) + (draggingCard ? draggingOffset : Vector2.zero);
     }
 
     // Call this function when a card is played or removed from the hand
@@ -134,11 +179,10 @@ public class Hand : MonoBehaviour
         {
             Vector2 newPosition = CalculateCardPosition(i);
 
-            // If a card is under the mouse, move other cards out of the way
+            if (state == HandState.Idle)
+                newPosition += new Vector2(0, -idleCardYSinkAmount);
             if (cardUnderMouse != null && cardUnderMouse == cardsInHand[i])
-            {
-                newPosition.y += cursorFloatingYAmount; // Adjust this value based on your design
-            }
+                newPosition.y += cursorFloatingYAmount;
 
             cardsInHand[i].targetLocalPosition = newPosition;
         }
@@ -158,11 +202,37 @@ public class Hand : MonoBehaviour
         // Sort child transforms by their local z position
         Transform[] sortedChildren = children.OrderBy(child => child.localPosition.z).ToArray();
 
-        // Set the sibling index to reorder the children based on their z values
-        for (int i = 0; i < sortedChildren.Length; i++)
+        if (cardBeingPlayed != null)
         {
-            sortedChildren[i].SetSiblingIndex(i);
+            // Set the sibling index to reorder the children based on their z values
+            for (int i = 0; i < cardsInHand.Count(); i++)
+            {
+                cardsInHand[i].transform.SetSiblingIndex(i);
+            }
+            cardBeingPlayed.transform.SetAsLastSibling();
         }
+        else
+        {
+            if (state == HandState.Focused)
+            {
+                // Set the sibling index to reorder the children based on their z values
+                for (int i = 0; i < sortedChildren.Length; i++)
+                {
+                    sortedChildren[i].SetSiblingIndex(i);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < cardsInHand.Count(); i++)
+                {
+                    cardsInHand[i].transform.SetSiblingIndex(i);
+                }
+            }
+
+        }
+
+        if (cardUnderMouse != null)
+            cardUnderMouse.transform.SetAsLastSibling();
     }
 
     #region Event Handlers
@@ -188,12 +258,28 @@ public class Hand : MonoBehaviour
         EventManager.Instance.AddListener<CardUI>(Enums.EventType.CardStartDragging, CardStartDraggingHandler);
         EventManager.Instance.AddListener<CardUI>(Enums.EventType.CardEndDragging, CardEndDraggingHandler);
         EventManager.Instance.AddListener<Card>(Enums.EventType.CardPlayed, CardPlayedHandler);
+        EventManager.Instance.AddListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
     }
     public void UnsubscribeToEvents()
     {
         EventManager.Instance.RemoveListener<CardUI>(Enums.EventType.CardStartDragging, CardStartDraggingHandler);
         EventManager.Instance.RemoveListener<CardUI>(Enums.EventType.CardEndDragging, CardEndDraggingHandler);
         EventManager.Instance.RemoveListener<Card>(Enums.EventType.CardPlayed, CardPlayedHandler);
+        EventManager.Instance.RemoveListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
+    }
+    public void EndEnemyTurnHandler()
+    {
+        DrawCardToHand();
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        mouseInHand = true;
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        mouseInHand = false;
     }
 
     #endregion Event Handlers

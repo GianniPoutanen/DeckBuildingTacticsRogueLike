@@ -28,4 +28,9 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
+
+    private void Start()
+    {
+        EventManager.Instance.InvokeEvent(Enums.EventType.GameStart);
+    }
 }

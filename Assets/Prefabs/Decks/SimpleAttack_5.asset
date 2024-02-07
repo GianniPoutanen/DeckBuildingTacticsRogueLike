@@ -9,10 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
-  m_Name: New Attack Action
-  m_EditorClassIdentifier: Assembly-CSharp::AttackAction
+  m_Script: {fileID: 11500000, guid: 383c66ae0a0e57c43b8a441d5e76adda, type: 3}
+  m_Name: SimpleAttack_5
+  m_EditorClassIdentifier: 
   _performer: {fileID: 0}
-  attacker: {fileID: 0}
-  target: {fileID: 0}
-  damage: 0
+  entityMask: []
+  damage: 5
+  targetPosition: {x: 0, y: 0, z: 0}
+  range: 2

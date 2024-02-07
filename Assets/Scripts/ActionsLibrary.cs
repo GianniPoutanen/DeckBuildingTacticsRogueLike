@@ -3,234 +3,23 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UIElements;
 using static UnityEngine.GraphicsBuffer;
 
-public abstract class Ability : ScriptableObject, IUndoRedoAction
-{
-    [HideInInspector]
-    public GridEntity _performer = null;
-    [HideInInspector]
-    public GridEntity Performer { get { return _performer; } set { _performer = value; } }
-
-
-    public virtual void Redo()
-    {
-        throw new NotImplementedException();
-    }
-
-    public virtual void Undo()
-    {
-        throw new NotImplementedException();
-    }
-    public virtual void Perform(Vector3Int position)
-    {
-        throw new NotImplementedException();
-    }
-
-    public virtual bool CanPlay(Vector3Int position)
-    {
-        return true;
-    }
-}
-
-[System.Serializable]
-public class AbilityWrapper : IUndoRedoAction
-{
-    public Ability ability;
-
-    public AbilityWrapper(Ability action)
-    {
-        this.ability = action;
-    }
-
-    public GridEntity Performer { get { return ability.Performer; } set { ability.Performer = value; } }
-
-    public void Perform(Vector3Int position)
-    {
-        ability.Perform(position);
-    }
-
-    public void Redo()
-    {
-        ability.Redo();
-    }
-
-    public void Undo()
-    {
-        ability.Undo();
-    }
-}
-
-public class CompositeAction : Ability
-{
-    public List<Ability> actions = new List<Ability>();
-
-    public override void Undo()
-    {
-        for (int i = 0; i <= actions.Count - 1; i++)
-        {
-            actions[i].Undo();
-        }
-    }
-
-    public override void Redo()
-    {
-        for (int i = 0; i < actions.Count; i++)
-        {
-            actions[i].Redo();
-        }
-    }
-
-    public override void Perform(Vector3Int position)
-    {
-        for (int i = 0; i < actions.Count; i++)
-        {
-            actions[i].Perform(position);
-        }
-    }
-
-    public override bool CanPlay(Vector3Int pos)
-    {
-        bool result = true;
-        foreach (Ability action in actions)
-        {
-            if (!action.CanPlay(pos))
-            {
-                result = false;
-                break;
-            }
-        }
-        return result;
-    }
-}
-
-
-/// <summary>
-/// GRID ENTITY ACTIONS
-/// </summary>
-public class MoveGridEntityAction : Ability
-{
-    public GridEntity target;
-    public Vector3Int oldPosition;
-    public Vector3Int newPosition;
-
-
-    public override void Undo()
-    {
-        target.transform.position = oldPosition;
-        target.targetGridPosition = oldPosition;
-    }
-
-    public override void Redo()
-    {
-        target.transform.position = newPosition;
-        target.targetGridPosition = newPosition;
-    }
-
-    public override void Perform(Vector3Int position)
-    {
-        Debug.Log("Moving " + target + " from " + oldPosition + " to " + newPosition);
-        target.targetGridPosition = newPosition;
-    }
-
-    public override bool CanPlay(Vector3Int position)
-    {
-        return target.CanMoveTo(position);
-    }
-}
-
-public class UseEnergyAction : Ability
-{
-    private int newEnergyAmount;
-    private int oldEnergyAmount;
-    public int amount = 0;
-
-    public override void Perform(Vector3Int position)
-    {
-        oldEnergyAmount = PlayerManager.Instance.CurrentEnergy;
-        newEnergyAmount = PlayerManager.Instance.CurrentEnergy - amount;
-        PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
-    }
-
-    public override void Redo()
-    {
-        PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
-    }
-
-    public override void Undo()
-    {
-        PlayerManager.Instance.CurrentEnergy = oldEnergyAmount;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
-    }
-
-    public override bool CanPlay(Vector3Int position)
-    {
-        return PlayerManager.Instance.CurrentEnergy - amount >= 0;
-    }
-}
-
+/*
 #region Attack Abilities
-[CreateAssetMenu(menuName = "Actions/Attack Action")]
-public class AttackAbility : Ability
+
+#region Cleace Attack
+[CreateAssetMenu(menuName = "Abilities/Attacks/Cleave Attack Action")]
+public class CleaveAttackAbility : Ability
 {
-    [HideInInspector]
-    public GridEntity attacker;
-    [HideInInspector]
-    public GridEntity target;
-    private int beforeHealth;
-    private int afterHealth;
-    private int beforeArmour;
-    private int afterArmour;
-    public bool piercing = false;
-    public int damage;
-
-
-    public override void Undo()
-    {
-        Debug.Log($"Undoing attack on {target.name}.");
-        target.Health = beforeHealth;
-    }
-
-    public override void Redo()
-    {
-        Debug.Log($"Redoing attack on {target.name}.");
-        target.Health = afterHealth;
-    }
-    public override void Perform(Vector3Int position)
-    {
-        target = GridManager.Instance.GetEntityOnPosition(position);
-
-        Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
-        beforeArmour = target.Armour;
-        beforeHealth = target.Health;
-        if (piercing)
-            target.PierceDamage(damage);
-        else
-            target.Damage(damage);
-        afterArmour = target.Armour;
-        afterHealth = target.Health;
-    }
-
-    public override bool CanPlay(Vector3Int position)
-    {
-        target = GridManager.Instance.GetEntityOnPosition(position);
-        return target != null;
-    }
-}
-
-[CreateAssetMenu(menuName = "Actions/Cleave Attack Action")]
-public class CleaveAttackAction : Ability
-{
-    [HideInInspector]
-    public GridEntity attacker;
     [HideInInspector]
     public List<GridEntity> targets;
     private Dictionary<GridEntity, int> beforeHealth = new Dictionary<GridEntity, int>();
     private Dictionary<GridEntity, int> afterHealth = new Dictionary<GridEntity, int>();
     public int damage;
     public int distance = 2;
+    public Vector3Int targetPosition;
 
     public override void Undo()
     {
@@ -249,13 +38,12 @@ public class CleaveAttackAction : Ability
             target.Health = afterHealth[target];
         }
     }
-    public override void Perform(Vector3Int position)
+    public override void Perform()
     {
-
-
+        base.Perform();
         foreach (var target in targets)
         {
-            Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
+            Debug.Log($"{_performer.name} attacks {target.name} for {damage} damage.");
             beforeHealth.Add(target, target.Health);
             target.Damage(damage);
             afterHealth.Add(target, target.Health);
@@ -264,12 +52,12 @@ public class CleaveAttackAction : Ability
 
     public override bool CanPlay(Vector3Int position)
     {
-        if (attacker != null)
+        if (_performer != null)
         {
             float angle = 0;
             // TODO add grid manager logic for cleaving in cone
-            GridManager.Instance.GetPositionsInCone(attacker.targetGridPosition, distance, angle);
-            targets = GridManager.Instance.GetEntitiesOnPositions(GridManager.Instance.GetPositionsInCone(attacker.targetGridPosition, distance, angle));
+            GridManager.Instance.GetPositionsInCone(_performer.targetGridPosition, distance, angle);
+            targets = GridManager.Instance.GetEntitiesOnPositions(GridManager.Instance.GetPositionsInCone(_performer.targetGridPosition, distance, angle));
             return targets.Count > 0;
 
         }
@@ -277,17 +65,55 @@ public class CleaveAttackAction : Ability
     }
 }
 
-[CreateAssetMenu(menuName = "Actions/Straight Attack Action")]
-public class StraightAttackAction : Ability
+public class CleaveAttackBuilder : IAbilityBuilder
 {
-    [HideInInspector]
-    public GridEntity attacker;
+    CleaveAttackAbility cleaveAttackAbility = new CleaveAttackAbility();
+
+    public Ability Build()
+    {
+        return cleaveAttackAbility;
+    }
+
+    public IAbilityBuilder SetPerformer(GridEntity performer)
+    {
+        cleaveAttackAbility.Performer = performer;
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetPosition(Vector3Int position)
+    {
+        cleaveAttackAbility.targetPosition = position;
+        return this;
+    }
+
+    public IAbilityBuilder SetRange(int range)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetEntity(GridEntity entity)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetCard(Card card)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+#endregion Cleace Attack
+
+#region Straight Attack
+[CreateAssetMenu(menuName = "Abilities/Attacks/Straight Attack Action")]
+public class StraightAttackAbility : Ability
+{
     [HideInInspector]
     public List<GridEntity> targets;
     private Dictionary<GridEntity, int> beforeHealth = new Dictionary<GridEntity, int>();
     private Dictionary<GridEntity, int> afterHealth = new Dictionary<GridEntity, int>();
     public int damage;
-
+    public Vector3Int targetPosition;
 
     public override void Undo()
     {
@@ -306,11 +132,12 @@ public class StraightAttackAction : Ability
             target.Health = afterHealth[target];
         }
     }
-    public override void Perform(Vector3Int position)
+    public override void Perform()
     {
+        base.Perform();
         foreach (var target in targets)
         {
-            Debug.Log($"{attacker.name} attacks {target.name} for {damage} damage.");
+            Debug.Log($"{_performer.name} attacks {target.name} for {damage} damage.");
             beforeHealth.Add(target, target.Health);
             target.Damage(damage);
             afterHealth.Add(target, target.Health);
@@ -323,15 +150,53 @@ public class StraightAttackAction : Ability
     }
 }
 
+public class StraightAttackBuilder : IAbilityBuilder
+{
+    StraightAttackAbility moveSelfAbility = new StraightAttackAbility();
+
+    public Ability Build()
+    {
+        return moveSelfAbility;
+    }
+
+    public IAbilityBuilder SetPerformer(GridEntity performer)
+    {
+        moveSelfAbility.Performer = performer;
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetPosition(Vector3Int position)
+    {
+        moveSelfAbility.targetPosition = position;
+        return this;
+    }
+
+    public IAbilityBuilder SetRange(int range)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetEntity(GridEntity entity)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetCard(Card card)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+#endregion Straight Attack
 
 #endregion Attack Abilities
 
 #region Healing / Shielding Abilities
-[CreateAssetMenu(menuName = "Heal Or Shield/Heal Action")]
-public class HealAction : Ability
+
+#region Heal Target
+[CreateAssetMenu(menuName = "Abilities/Heal Or Shield/Heal Action")]
+public class HealTargetAbility : Ability
 {
-    [HideInInspector]
-    public GridEntity healer;
     [HideInInspector]
     public GridEntity target;
     private int beforeHealth;
@@ -351,19 +216,55 @@ public class HealAction : Ability
         target.Health = afterHealth;
     }
 
-    public override void Perform(Vector3Int position)
+    public override void Perform()
     {
-        target = GridManager.Instance.GetEntityOnPosition(position);
-
-        Debug.Log($"{healer.name} heals {target.name} for {healingAmount} health.");
+        base.Perform();
+        Debug.Log($"{_performer.name} heals {target.name} for {healingAmount} health.");
         beforeHealth = target.Health;
         target.Heal(healingAmount);
         afterHealth = target.Health;
     }
 }
+public class HealTargetBuilder : IAbilityBuilder
+{
+    HealTargetAbility healTargetAbility = new HealTargetAbility();
 
-[CreateAssetMenu(menuName = "Heal Or Shield/Shield Action")]
-public class ShieldAction : Ability
+    public Ability Build()
+    {
+        return healTargetAbility;
+    }
+
+    public IAbilityBuilder SetPerformer(GridEntity performer)
+    {
+        healTargetAbility.Performer = performer;
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetPosition(Vector3Int position)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetRange(int range)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetEntity(GridEntity entity)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetCard(Card card)
+    {
+        throw new NotImplementedException();
+    }
+}
+#endregion Heal Target
+
+#region Shield Target
+[CreateAssetMenu(menuName = "Abilities/Heal Or Shield/Shield Action")]
+public class ShieldTargetAbility : Ability
 {
     [HideInInspector]
     public GridEntity shielder;
@@ -386,10 +287,9 @@ public class ShieldAction : Ability
         target.Armour = afterArmour;
     }
 
-    public override void Perform(Vector3Int position)
+    public override void Perform()
     {
-        target = GridManager.Instance.GetEntityOnPosition(position);
-
+        base.Perform();
         Debug.Log($"{shielder.Armour} shields {target.name} for {armourAmount} health.");
         beforeArmour = target.Health;
         target.Shield(armourAmount);
@@ -397,8 +297,46 @@ public class ShieldAction : Ability
     }
 }
 
-[CreateAssetMenu(menuName = "Heal Or Shield/Heal Group Action")]
-public class HealGroupAction : Ability
+public class ShieldTrgetBuilder : IAbilityBuilder
+{
+    ShieldTargetAbility shieldTargetAbility = new ShieldTargetAbility();
+
+    public Ability Build()
+    {
+        return shieldTargetAbility;
+    }
+
+    public IAbilityBuilder SetPerformer(GridEntity performer)
+    {
+        shieldTargetAbility.Performer = performer;
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetPosition(Vector3Int position)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetRange(int range)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetEntity(GridEntity entity)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetCard(Card card)
+    {
+        throw new NotImplementedException();
+    }
+}
+#endregion Shield Target
+
+#region Heal Group
+[CreateAssetMenu(menuName = "Abilities/Heal Or Shield/Heal Group Action")]
+public class HealGroupAbility : Ability
 {
     [HideInInspector]
     public GridEntity healer;
@@ -407,6 +345,7 @@ public class HealGroupAction : Ability
     private Dictionary<GridEntity, int> beforeHealthDict;
     private Dictionary<GridEntity, int> afterHealthDict;
     public int healingAmount;
+    public Vector3Int targetPosition;
 
     public override void Undo()
     {
@@ -426,8 +365,9 @@ public class HealGroupAction : Ability
         }
     }
 
-    public override void Perform(Vector3Int position)
+    public override void Perform()
     {
+        base.Perform();
         beforeHealthDict = new Dictionary<GridEntity, int>();
         afterHealthDict = new Dictionary<GridEntity, int>();
 
@@ -441,8 +381,46 @@ public class HealGroupAction : Ability
     }
 }
 
-[CreateAssetMenu(menuName = "Heal Or Shield/Shield Group Action")]
-public class ShieldGroupAction : Ability
+public class HealGroupBuilder : IAbilityBuilder
+{
+    HealGroupAbility shieldTargetAbility = new HealGroupAbility();
+
+    public Ability Build()
+    {
+        return shieldTargetAbility;
+    }
+
+    public IAbilityBuilder SetPerformer(GridEntity performer)
+    {
+        shieldTargetAbility.Performer = performer;
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetPosition(Vector3Int position)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetRange(int range)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetEntity(GridEntity entity)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetCard(Card card)
+    {
+        throw new NotImplementedException();
+    }
+}
+#endregion Heal Group
+
+#region Shield Group
+[CreateAssetMenu(menuName = "Abilities/Heal Or Shield/Shield Group Action")]
+public class ShieldGroupAbility : Ability
 {
     [HideInInspector]
     public GridEntity shielder;
@@ -470,8 +448,9 @@ public class ShieldGroupAction : Ability
         }
     }
 
-    public override void Perform(Vector3Int position)
+    public override void Perform()
     {
+        base.Perform();
         beforeArmourDict = new Dictionary<GridEntity, int>();
         afterArmourDict = new Dictionary<GridEntity, int>();
 
@@ -485,39 +464,42 @@ public class ShieldGroupAction : Ability
     }
 }
 
-#endregion Healing / Shielding Abilities
-
-
-public class CardPlayedAction : Ability, IUndoRedoAction
+public class ShieldGroupBuilder : IAbilityBuilder
 {
-    private Card card;
+    ShieldGroupAbility shieldTargetAbility = new ShieldGroupAbility();
 
-    public CardPlayedAction(Card card)
+    public Ability Build()
     {
-        this.card = card;
+        return shieldTargetAbility;
     }
 
-    public override void Perform(Vector3Int position)
+    public IAbilityBuilder SetPerformer(GridEntity performer)
     {
-        foreach (var action in card.abilities)
-        {
-            action.Perform(position);
-        }
+        shieldTargetAbility.Performer = performer;
+        return this;
     }
 
-    public override void Undo()
+    public IAbilityBuilder SetTargetPosition(Vector3Int position)
     {
-        for (int i = card.abilities.Length - 1; i >= 0; i--)
-        {
-            card.abilities[i].Undo();
-        }
+        return this;
     }
 
-    public override void Redo()
+    public IAbilityBuilder SetRange(int range)
     {
-        foreach (var action in card.abilities)
-        {
-            action.Redo();
-        }
+        return this;
+    }
+
+    public IAbilityBuilder SetTargetEntity(GridEntity entity)
+    {
+        return this;
+    }
+
+    public IAbilityBuilder SetCard(Card card)
+    {
+        throw new NotImplementedException();
     }
 }
+#endregion Shield Group
+
+#endregion Healing / Shielding Abilities
+*/

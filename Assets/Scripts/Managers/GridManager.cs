@@ -46,38 +46,77 @@ public class GridManager : MonoBehaviour
     public Grid grid;
     // Tile Maps
     public Tilemap floorTilemap;
-    public Tilemap selectionTilemap;
+    public Tilemap enemyAttackTilemap;
+    public Tilemap castTilemap;
+
     // List of entities
     public List<GridEntity> entities = new List<GridEntity>();
 
     [Header("Tiles")]
-    public Tile selectedTile;
-    public Tile unselectedTile;
+    public Tile enemySelectionTile;
+    public Tile castSelectionTile;
 
-    void Update()
-    {
-        // Example: Set the selected grid position on mouse click
-        if (Input.GetMouseButtonDown(0))
-        {
-            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Vector3Int selectedGridPosition = GetGridPositionFromWorldPoint(mouseWorldPos);
-            List<Vector3Int> selectedGridPositions = new List<Vector3Int>();
-
-            selectedGridPositions.Add(new Vector3Int(selectedGridPosition.x, selectedGridPosition.y, 0));
-            selectedGridPositions.AddRange(FindPath(selectedGridPosition, PlayerManager.Instance.Player.targetGridPosition));
-            UpdateSelectedTilemap(selectedGridPositions);
-
-        }
-    }
+    private List<Vector3Int> selectedEnemyDangerPositions = new List<Vector3Int>();
+    private List<Ability> enemyAbilitiesQueued = new List<Ability>();
 
     private void OnDestroy()
     {
         UnsubscribeToEvents();
     }
 
+    public Entity GetEntityUnderMouse()
+    {
+        // Cast a ray from the mouse position to check if it hits the entity
+        Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        RaycastHit2D hit = Physics2D.Raycast(mousePosition, Vector2.zero);
+
+        if (hit.collider != null)
+        {
+            return hit.collider.transform.root.GetComponent<Entity>();
+        }
+
+        return null;
+    }
+
+    public void UpdateSelectedEnemyAttackTiles(List<Vector3Int> positions)
+    {
+        selectedEnemyDangerPositions = positions;
+        UpdateEnemyAttackTiles();
+    }
+
+    public void UpdateEnemyAttackTiles()
+    {
+        BoundsInt bounds = floorTilemap.cellBounds;
+        enemyAttackTilemap.ClearAllTiles();
+        List<Vector3Int> selectedGridPositions = new List<Vector3Int>();
+
+        foreach (var ability in enemyAbilitiesQueued)
+            selectedGridPositions.AddRange(ability.GetAbilityPositions());
+
+        foreach (var position in bounds.allPositionsWithin)
+        {
+            TileBase currentTile = floorTilemap.GetTile(position);
+
+            // Selected tiles
+            if (currentTile != null)
+            {
+                // Check if the position matches the selected grid position
+                if (selectedGridPositions.Contains(position) || selectedEnemyDangerPositions.Contains(position))
+                {
+                    // Set the tile to the selected tile
+                    enemyAttackTilemap.SetTile(position, enemySelectionTile);
+                }
+                else
+                {
+                    // Set all other tiles to the unselected tile
+                    enemyAttackTilemap.SetTile(position, null);
+                }
+            }
+        }
+    }
 
     // Update the tilemap to reflect the selected tiles
-    public void UpdateSelectedTilemap(List<Vector3Int> selectedGridPositions)
+    public void UpdateCastPositionsTilemap(List<Vector3Int> selectedGridPositions)
     {
         BoundsInt bounds = floorTilemap.cellBounds;
 
@@ -92,12 +131,12 @@ public class GridManager : MonoBehaviour
                 if (selectedGridPositions.Contains(position))
                 {
                     // Set the tile to the selected tile
-                    selectionTilemap.SetTile(position, selectedTile);
+                    castTilemap.SetTile(position, enemySelectionTile);
                 }
                 else
                 {
                     // Set all other tiles to the unselected tile
-                    selectionTilemap.SetTile(position, null);
+                    castTilemap.SetTile(position, null);
                 }
             }
         }
@@ -229,20 +268,85 @@ public class GridManager : MonoBehaviour
             entities.Add((GridEntity)entity);
     }
 
+    public void AddQueuedAttackHandler(Ability ability)
+    {
+        enemyAbilitiesQueued.Add(ability);
+        UpdateEnemyAttackTiles();
+    }
+
+    public void RemoveQueuedAttackHandler(Ability ability)
+    {
+        enemyAbilitiesQueued.Remove(ability);
+        UpdateEnemyAttackTiles();
+    }
+
+    public void EndPlayerTurnHandler()
+    {
+        selectedEnemyDangerPositions.Clear();
+        UpdateEnemyAttackTiles();
+    }
+
     public void SubscribeToEvents()
     {
         EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
         EventManager.Instance.AddListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
+        EventManager.Instance.AddListener<Ability>(Enums.EventType.AttackQueued, AddQueuedAttackHandler);
+        EventManager.Instance.AddListener<Ability>(Enums.EventType.AttackDequeued, RemoveQueuedAttackHandler);
+        EventManager.Instance.AddListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
     }
+
     public void UnsubscribeToEvents()
     {
         EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
         EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
+        EventManager.Instance.RemoveListener<Ability>(Enums.EventType.AttackQueued, AddQueuedAttackHandler);
+        EventManager.Instance.RemoveListener<Ability>(Enums.EventType.AttackDequeued, RemoveQueuedAttackHandler);
+        EventManager.Instance.RemoveListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
     }
 
     #endregion Event Handlers
 
     #region Helper functions
+
+    public List<Vector3Int> GetGridPositionsWithinDistance(Vector3Int centerPosition, int distance)
+    {
+        List<Vector3Int> result = new List<Vector3Int>();
+
+        for (int x = -distance; x <= distance; x++)
+        {
+            for (int y = -distance; y <= distance; y++)
+            {
+                if (Mathf.Abs(x) + Mathf.Abs(y) > distance)
+                    continue;
+
+                Vector3Int gridPos = new Vector3Int(centerPosition.x + x, centerPosition.y + y);
+                result.Add(gridPos);
+            }
+        }
+
+        return result;
+    }
+
+    public List<Vector2Int> GetGridPositionsWithinDistance(Vector2Int centerPosition, int distance)
+    {
+        List<Vector2Int> result = new List<Vector2Int>();
+
+        for (int x = -distance; x <= distance; x++)
+        {
+            for (int y = -distance; y <= distance; y++)
+            {
+                // Skip positions outside the specified distance.
+                if (Mathf.Abs(x) + Mathf.Abs(y) > distance)
+                    continue;
+
+                Vector2Int gridPos = new Vector2Int(centerPosition.x + x, centerPosition.y + y);
+                result.Add(gridPos);
+            }
+        }
+
+        return result;
+    }
+
 
     public GridEntity GetEntityOnPosition(Vector3Int gridPosition)
     {
@@ -251,25 +355,24 @@ public class GridManager : MonoBehaviour
 
     public GridEntity GetEntityOnPosition(Vector3Int gridPosition, List<string> entityMask)
     {
+        Vector3Int pos = gridPosition * new Vector3Int(1, 1, 0);
         // Loop through each entity
         foreach (GridEntity entity in entities)
         {
             // Get the entity's position in world coordinates
-            Vector3 entityPosition = entity.targetGridPosition;
+            Vector3Int entityPosition = entity.targetGridPosition;
 
             // Convert the entity's position to grid coordinates
             Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
 
             // Check if the entity is at the given grid position
-            if (gridPosition == entityGridPosition && entityMask.Contains(entity.tag))
+            if (pos.Equals(entityGridPosition) && (entityMask.Count == 0 || entityMask.Contains(entity.tag)))
             {
                 return entity;
             }
         }
         return null;
     }
-
-
 
     public List<GridEntity> GetEntitiesOnPositions(List<Vector3Int> gridPositions)
     {
@@ -278,8 +381,7 @@ public class GridManager : MonoBehaviour
 
     public List<GridEntity> GetEntitiesOnPositions(List<Vector3Int> gridPositions, List<string> entityMask)
     {
-        List<GridEntity> entities = new List<GridEntity>();
-
+        List<GridEntity> results = new List<GridEntity>();
         // Loop through each entity
         foreach (GridEntity entity in entities)
         {
@@ -290,12 +392,12 @@ public class GridManager : MonoBehaviour
             Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
 
             // Check if the entity is at the given grid position
-            if (gridPositions.Contains(entityGridPosition) && entityMask.Contains(entity.tag))
+            if (((gridPositions.Contains(entityGridPosition) && entityMask.Count == 0)) || (gridPositions.Contains(entityGridPosition) && entityMask.Contains(entity.tag)))
             {
-                entities.Add(entity);
+                results.Add(entity);
             }
         }
-        return entities;
+        return results;
     }
 
     public List<Vector3Int> GetValidPositionsInDistance(Vector3Int position, int distance, bool includingDiagonalMovement, List<string> entityMask)
@@ -319,6 +421,10 @@ public class GridManager : MonoBehaviour
         return GetValidPositionsInDistance(position, distance, includingDiagonalMovement, new List<string>());
     }
 
+    public int GetWalkingDistance(Vector3Int startPos, Vector3Int endPos)
+    {
+        return FindPath(startPos, endPos).Count - 1;
+    }
 
     public List<Vector3Int> GetPositionsInDistance(Vector3Int position, int distance, bool includingDiagonalMovement)
     {
@@ -338,6 +444,29 @@ public class GridManager : MonoBehaviour
 
         return result;
     }
+
+
+    // Get positions in a grid from a starting position towards a specific direction at a certain distance
+    public Vector3[] GetPositionsInDirection(Vector3 startPos, Vector3 direction, int distance)
+    {
+        if (distance < 0)
+        {
+            Debug.LogError("Distance cannot be negative.");
+            return null;
+        }
+
+        // List to store the positions
+        var positions = new List<Vector3>();
+
+        for (int i = 1; i <= distance; i++)
+        {
+            Vector3 newPos = startPos + direction * i;
+            positions.Add(newPos);
+        }
+
+        return positions.ToArray();
+    }
+
 
     // Check if any entities inhabit a given grid position
     public bool HasEntitiesAtPosition(Vector3Int gridPosition, List<string> entityMask)

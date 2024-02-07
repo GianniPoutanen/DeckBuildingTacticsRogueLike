@@ -29,12 +29,53 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
+    private void Awake()
+    {
+        playerHealth = maxPlayerHealth;
+    }
+
     #endregion
 
     // Add your player-related variables and state here
-    public int playerHealth = 100;
+    [Header("Players Stats")]
+    public int maxPlayerHealth = 40;
+    public int playerHealth = 40;
+    public int armour = 0;
     public int maxEnergy = 2;
     private int _energy = 2;
+
+    public int maxMovement = 2;
+    public int numMovement = 2;
+
+    [SerializeField]
+    [Header("Decks")]
+    public Deck playerDeck;
+    [SerializeField]
+    private Deck _activeDeck;
+    [SerializeField]
+    public Deck activeDeck
+    {
+        get
+        {
+            if (_activeDeck == null)
+            {
+                _activeDeck = Instantiate(instance.playerDeck);
+                _activeDeck.Shuffle();
+            }
+            return _activeDeck;
+        }
+    }
+    private Deck _discardPile;
+    [SerializeField]
+    public Deck discardPile
+    {
+        get
+        {
+            if (_discardPile == null)
+                _discardPile = new Deck();
+            return _discardPile;
+        }
+    }
 
     public PlayerStates State = PlayerStates.PlayerTurn;
 
@@ -58,6 +99,7 @@ public class PlayerManager : MonoBehaviour
         // You can perform any necessary initialization here
         Player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerController>();
         SubscribeToEvents();
+
     }
 
     private void Update()
@@ -70,7 +112,6 @@ public class PlayerManager : MonoBehaviour
         instance = null;
         UnsubscribeToEvents();
     }
-
 
     private void CheckEndTurn()
     {
@@ -113,6 +154,7 @@ public class PlayerManager : MonoBehaviour
             UndoRedoManager.Instance.AddUndoAction(new CompositeAction() { actions = Player.CurrentActions.ToList() });
             Player.CurrentActions = new Stack<Ability>();
         }
+        State = PlayerStates.Waiting;
         EventManager.Instance.InvokeEvent(Enums.EventType.EndPlayerTurn);
     }
 
@@ -121,17 +163,24 @@ public class PlayerManager : MonoBehaviour
     #region Event Handlers
     public void SubscribeToEvents()
     {
+        EventManager.Instance.AddListener(Enums.EventType.GameStart, GameStartHandler);
         EventManager.Instance.AddListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
     }
     public void UnsubscribeToEvents()
     {
         EventManager.Instance.RemoveListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.RemoveListener(Enums.EventType.GameStart, GameStartHandler);
     }
 
     public void EndEnemyTurnHandler()
     {
         CurrentEnergy = maxEnergy;
         EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+    }
+
+    public void GameStartHandler()
+    {
+        activeDeck.Shuffle();
     }
 
     #endregion Event Handlers

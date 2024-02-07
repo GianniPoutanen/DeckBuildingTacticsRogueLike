@@ -56,10 +56,13 @@ public class EnemyManager : MonoBehaviour
     // Command all enemies to do something
     public IEnumerator CommandAllEnemies()
     {
-        foreach (Enemy enemy in enemies)
+        if (enemies != null && enemies.Count > 0)
         {
-            // Implement logic to command the enemy
-            yield return enemy.DoTurn();
+            foreach (Enemy enemy in enemies)
+            {
+                // Implement logic to command the enemy
+                yield return enemy.DoTurn();
+            }
         }
         EventManager.Instance.InvokeEvent(Enums.EventType.EndEnemyTurn);
         yield return null;
@@ -77,7 +80,7 @@ public class EnemyManager : MonoBehaviour
     public void EntityDestroyedHandler(Entity entity)
     {
         if (entity is Enemy)
-        enemies.Add((Enemy)entity);
+            enemies.Add((Enemy)entity);
     }
 
     public void SubscribeToEvents()

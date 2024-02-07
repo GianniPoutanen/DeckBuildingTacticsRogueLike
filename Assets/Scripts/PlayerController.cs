@@ -8,6 +8,9 @@ using static Enums;
 public class PlayerController : GridEntity
 {
     int movementCost = 1;
+    public override int Armour { get { return PlayerManager.Instance.armour; } set { PlayerManager.Instance.armour = value; } }
+    public override int MaxHealth { get { return PlayerManager.Instance.maxPlayerHealth; } set { PlayerManager.Instance.maxPlayerHealth = value; } }
+    public override int Health { get { return PlayerManager.Instance.playerHealth; } set { PlayerManager.Instance.playerHealth = value; } }
 
     // Current Turn
     public Stack<Ability> CurrentActions = new Stack<Ability>();
@@ -15,7 +18,7 @@ public class PlayerController : GridEntity
 
     public override void Update()
     {
-        if(EventManager.Instance.EventsRunning)
+        if (EventManager.Instance.EventsRunning)
         {
             return;
         }
@@ -73,14 +76,13 @@ public class PlayerController : GridEntity
         // Check if the new target position is valid
         if (GridManager.Instance.IsFloorGridPositionEmpty(newTargetGridPosition))
         {
-            CurrentActions.Push(new CompositeAction()
+            CompositeAction movePlayerAction = new CompositeAction()
             {
-                actions = new List<Ability>(){ new MoveGridEntityAction() { target = this, oldPosition = targetGridPosition, newPosition = newTargetGridPosition },
-                                              new UseEnergyAction() { amount = movementCost } }
-            });
-                
-            PlayerManager.Instance.CurrentEnergy -= movementCost;
-            targetGridPosition = newTargetGridPosition;
+                actions = new List<Ability>(){new MoveSelfBuilder().SetPerformer(this).SetTargetPosition(newTargetGridPosition).Build(),
+                                              new UseEnergyAction() { Performer = this, amount = movementCost } }
+            };
+            CurrentActions.Push(movePlayerAction);
+            movePlayerAction.Perform();
             EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
         }
     }
@@ -105,7 +107,6 @@ public class PlayerController : GridEntity
     public void EndEnemyTurnHandler()
     {
         PlayerManager.Instance.State = PlayerStates.PlayerTurn;
-        PlayerManager.Instance.CurrentEnergy = PlayerManager.Instance.maxEnergy;
     }
     #endregion Evemt Handlers
 }

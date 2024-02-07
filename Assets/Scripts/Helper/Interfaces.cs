@@ -1,6 +1,7 @@
 
 // Interface for undo and redo actions
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public interface IHeapItem<T> : IComparable<T>
@@ -10,8 +11,19 @@ public interface IHeapItem<T> : IComparable<T>
 
 public interface IUndoRedoAction
 {
-    GridEntity Performer { get; set; }
     void Undo();
     void Redo();
-    void Perform(Vector3Int position);
+    void Perform();
+}
+
+public interface IAbilityBuilder
+{
+    Ability Build();
+}
+
+public interface IEnemyAttack
+{
+    public bool CanPerform(Vector3 position);
+    public void ActionAttack();
+    public List<Vector3Int> GetEffectivePositions();
 }
