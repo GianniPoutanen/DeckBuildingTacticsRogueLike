@@ -5,7 +5,6 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using static Enums;
 
 public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
@@ -255,17 +254,17 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 
     public void SubscribeToEvents()
     {
-        EventManager.Instance.AddListener<CardUI>(Enums.EventType.CardStartDragging, CardStartDraggingHandler);
-        EventManager.Instance.AddListener<CardUI>(Enums.EventType.CardEndDragging, CardEndDraggingHandler);
-        EventManager.Instance.AddListener<Card>(Enums.EventType.CardPlayed, CardPlayedHandler);
-        EventManager.Instance.AddListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.AddListener<CardUI>(EventType.CardStartDragging, CardStartDraggingHandler);
+        EventManager.Instance.AddListener<CardUI>(EventType.CardEndDragging, CardEndDraggingHandler);
+        EventManager.Instance.AddListener<Card>(EventType.CardPlayed, CardPlayedHandler);
+        EventManager.Instance.AddListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
     }
     public void UnsubscribeToEvents()
     {
-        EventManager.Instance.RemoveListener<CardUI>(Enums.EventType.CardStartDragging, CardStartDraggingHandler);
-        EventManager.Instance.RemoveListener<CardUI>(Enums.EventType.CardEndDragging, CardEndDraggingHandler);
-        EventManager.Instance.RemoveListener<Card>(Enums.EventType.CardPlayed, CardPlayedHandler);
-        EventManager.Instance.RemoveListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.RemoveListener<CardUI>(EventType.CardStartDragging, CardStartDraggingHandler);
+        EventManager.Instance.RemoveListener<CardUI>(EventType.CardEndDragging, CardEndDraggingHandler);
+        EventManager.Instance.RemoveListener<Card>(EventType.CardPlayed, CardPlayedHandler);
+        EventManager.Instance.RemoveListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
     }
     public void EndEnemyTurnHandler()
     {

@@ -23,7 +23,7 @@ public class Deck : ScriptableObject
             Cards[n] = value;
         }
 
-        EventManager.Instance.InvokeEvent<Deck>(Enums.EventType.DeckShuffled, this);
+        EventManager.Instance.InvokeEvent<Deck>(EventType.DeckShuffled, this);
     }
 
     // Draw a card from the deck

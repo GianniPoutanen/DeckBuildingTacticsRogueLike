@@ -8,7 +8,6 @@ public class MoveTargetAbility : Ability
 	private Vector3Int oldPosition;
 	private Vector3Int newPosition;
     [HideInInspector]
-	public Vector3Int targetPosition;
     public GridEntity target;
 	public int distance;
 
@@ -30,8 +29,8 @@ public class MoveTargetAbility : Ability
 		base.Perform();
 		Debug.Log("Moving " + _performer + " from " + oldPosition + " to " + newPosition);
 		oldPosition = _performer.targetGridPosition;
-		target.targetGridPosition = targetPosition * new Vector3Int(1, 1, 0);
-		newPosition = targetPosition;
+		target.targetGridPosition = TargetPosition * new Vector3Int(1, 1, 0);
+		newPosition = TargetPosition;
 	}
 
 	public override bool CanPerform(Vector3Int position)
@@ -63,7 +62,7 @@ public class MoveTargetBuilder : AbilityBuilder
 
 	public override AbilityBuilder SetTargetPosition(Vector3Int position)
 	{
-		moveSelfAbility.targetPosition = position;
+		moveSelfAbility.TargetPosition = position;
 		return this;
 	}
 

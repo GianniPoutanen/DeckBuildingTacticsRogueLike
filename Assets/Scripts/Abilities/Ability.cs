@@ -8,8 +8,11 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
     public GridEntity _performer = null;
     [HideInInspector]
     public GridEntity Performer { get { return _performer; } set { _performer = value; } }
+    public Vector3Int TargetPosition { get; set; }
 
-    public string[] entityMask;
+
+    [SerializeField]
+    public List<string> entityMask;
 
     public virtual void Redo()
     {
@@ -26,7 +29,7 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
         UndoRedoManager.Instance.AddUndoAction(this);
     }
 
-    public virtual bool CanPerform(Vector3Int position)
+    public virtual bool CanPerform(Vector3Int targetPosition)
     {
         return true;
     }
@@ -45,42 +48,41 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
 
 
     public virtual void HighlightSelectedPositions()
-    { 
-        
+    {
+
     }
 }
 
 [System.Serializable]
 public class AbilityWrapper : IUndoRedoAction
 {
-	public Ability ability;
+    public Ability ability;
 
-	public AbilityWrapper(Ability action)
-	{
-		this.ability = action;
-	}
+    public AbilityWrapper(Ability action)
+    {
+        this.ability = action;
+    }
 
-	public GridEntity Performer { get { return ability.Performer; } set { ability.Performer = value; } }
+    public GridEntity Performer { get { return ability.Performer; } set { ability.Performer = value; } }
 
-	public void Perform()
-	{
-		ability.Perform();
-	}
+    public void Perform()
+    {
+        ability.Perform();
+    }
 
-	public void Redo()
-	{
-		ability.Redo();
-	}
+    public void Redo()
+    {
+        ability.Redo();
+    }
 
-	public void Undo()
-	{
-		ability.Undo();
-	}
+    public void Undo()
+    {
+        ability.Undo();
+    }
 }
 
 public abstract class AbilityBuilder : IAbilityBuilder
 {
-
     public virtual AbilityBuilder SetPerformer(GridEntity performer)
     {
         return this;
@@ -106,6 +108,16 @@ public abstract class AbilityBuilder : IAbilityBuilder
         return this;
     }
 
+    public virtual AbilityBuilder SetEntityMask(List<string> mask)
+    {
+        return this;
+    }
+
+    public virtual AbilityBuilder SetCanPierce(bool canPierce)
+    {
+        return this;
+    }
+
     public static AbilityBuilder GetBuilder(Ability ability)
     {
         switch (ability)
@@ -116,6 +128,8 @@ public abstract class AbilityBuilder : IAbilityBuilder
                 return new MoveTargetBuilder((MoveTargetAbility)ability);
             case SimpleAttackAbility:
                 return new SimpleAttackBuilder((SimpleAttackAbility)ability);
+            case StraightAttackAbility:
+                return new StraightAttackBuilder((StraightAttackAbility)ability);
         }
         return null;
     }

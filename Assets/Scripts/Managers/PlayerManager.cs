@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static Enums;
 
 public class PlayerManager : MonoBehaviour
 {
@@ -86,7 +85,7 @@ public class PlayerManager : MonoBehaviour
         set
         {
             _energy = value;
-            EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+            EventManager.Instance.InvokeEvent(EventType.UpdateUI);
         }
     }
 
@@ -143,7 +142,7 @@ public class PlayerManager : MonoBehaviour
     {
         playerHealth -= damageAmount;
         // Invoke the PlayerDamageTaken event with the specified damage amount
-        EventManager.Instance.InvokeEvent(Enums.EventType.PlayerDamageTaken, damageAmount);
+        EventManager.Instance.InvokeEvent(EventType.PlayerAttacked, damageAmount);
     }
 
 
@@ -155,7 +154,7 @@ public class PlayerManager : MonoBehaviour
             Player.CurrentActions = new Stack<Ability>();
         }
         State = PlayerStates.Waiting;
-        EventManager.Instance.InvokeEvent(Enums.EventType.EndPlayerTurn);
+        EventManager.Instance.InvokeEvent(EventType.EndPlayerTurn);
     }
 
 
@@ -163,19 +162,19 @@ public class PlayerManager : MonoBehaviour
     #region Event Handlers
     public void SubscribeToEvents()
     {
-        EventManager.Instance.AddListener(Enums.EventType.GameStart, GameStartHandler);
-        EventManager.Instance.AddListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.AddListener(EventType.GameStart, GameStartHandler);
+        EventManager.Instance.AddListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
     }
     public void UnsubscribeToEvents()
     {
-        EventManager.Instance.RemoveListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
-        EventManager.Instance.RemoveListener(Enums.EventType.GameStart, GameStartHandler);
+        EventManager.Instance.RemoveListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.RemoveListener(EventType.GameStart, GameStartHandler);
     }
 
     public void EndEnemyTurnHandler()
     {
         CurrentEnergy = maxEnergy;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+        EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 
     public void GameStartHandler()

@@ -29,14 +29,14 @@ public class EventManager : MonoBehaviour
 
     #endregion
     // Define a dictionary to store event delegates based on the enum
-    private readonly Dictionary<Enums.EventType, Delegate> eventVariabledDelegateDictionary = new Dictionary<Enums.EventType, Delegate>();
-    private readonly Dictionary<Enums.EventType, Delegate> eventDictionary = new Dictionary<Enums.EventType, Delegate>();
+    private readonly Dictionary<EventType, Delegate> eventVariabledDelegateDictionary = new Dictionary<EventType, Delegate>();
+    private readonly Dictionary<EventType, Delegate> eventDictionary = new Dictionary<EventType, Delegate>();
 
     public bool EventsRunning = false;
 
     #region Event Handling With Parameters
     // Method to add a listener for a specific event type with parameters
-    public void AddListener<T>(Enums.EventType eventType, Action<T> action)
+    public void AddListener<T>(EventType eventType, Action<T> action)
     {
         if (!eventVariabledDelegateDictionary.ContainsKey(eventType))
         {
@@ -47,7 +47,7 @@ public class EventManager : MonoBehaviour
     }
 
     // Method to remove a listener for a specific event type with parameters
-    public void RemoveListener<T>(Enums.EventType eventType, Action<T> action)
+    public void RemoveListener<T>(EventType eventType, Action<T> action)
     {
         if (eventVariabledDelegateDictionary.ContainsKey(eventType))
         {
@@ -56,7 +56,7 @@ public class EventManager : MonoBehaviour
     }
 
     // Method to invoke an event for a specific event type with parameters
-    public void InvokeEvent<T>(Enums.EventType eventType, T parameter)
+    public void InvokeEvent<T>(EventType eventType, T parameter)
     {
         Debug.Log(eventType.ToString());
         if (eventVariabledDelegateDictionary.ContainsKey(eventType))
@@ -68,7 +68,7 @@ public class EventManager : MonoBehaviour
 
     #region Event Handling Without Parameters
     // Method to add a listener for a specific event type with parameters
-    public void AddListener(Enums.EventType eventType, Action action)
+    public void AddListener(EventType eventType, Action action)
     {
         if (!eventDictionary.ContainsKey(eventType))
         {
@@ -80,7 +80,7 @@ public class EventManager : MonoBehaviour
     }
 
     // Method to remove a listener for a specific event type with parameters
-    public void RemoveListener(Enums.EventType eventType, Action action)
+    public void RemoveListener(EventType eventType, Action action)
     {
         if (eventDictionary.ContainsKey(eventType))
         {
@@ -90,7 +90,7 @@ public class EventManager : MonoBehaviour
 
 
     // Method to invoke an event for a specific event type with parameters
-    public void InvokeEvent(Enums.EventType eventType)
+    public void InvokeEvent(EventType eventType)
     {
         EventsRunning = true;
         if (eventDictionary.ContainsKey(eventType))

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using static Enums;
 
 public class PlayerController : GridEntity
 {
@@ -83,7 +82,7 @@ public class PlayerController : GridEntity
             };
             CurrentActions.Push(movePlayerAction);
             movePlayerAction.Perform();
-            EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+            EventManager.Instance.InvokeEvent(EventType.UpdateUI);
         }
     }
 
@@ -96,12 +95,12 @@ public class PlayerController : GridEntity
     public override void SubscribeToEvents()
     {
         base.SubscribeToEvents();
-        EventManager.Instance.AddListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.AddListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
     }
     public override void UnsubscribeToEvents()
     {
         base.UnsubscribeToEvents();
-        EventManager.Instance.RemoveListener(Enums.EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.RemoveListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
     }
 
     public void EndEnemyTurnHandler()

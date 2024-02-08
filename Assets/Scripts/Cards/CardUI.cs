@@ -48,7 +48,7 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
     public void OnDrag(PointerEventData eventData)
     {
         UIManager.Instance.Hand.cardBeingPlayed = this;
-        EventManager.Instance.InvokeEvent(Enums.EventType.CardStartDragging, this);
+        EventManager.Instance.InvokeEvent(EventType.CardStartDragging, this);
         HighlightCardCastLocations();
         dragging = true;
     }
@@ -67,7 +67,7 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
             transform.localPosition = originalLocalPosition;
         }
         dragging = false;
-        EventManager.Instance.InvokeEvent(Enums.EventType.CardEndDragging, this);
+        EventManager.Instance.InvokeEvent(EventType.CardEndDragging, this);
         castSelectionLocation.Clear();
         GridManager.Instance.UpdateCastPositionsTilemap(castSelectionLocation);
     }
@@ -102,7 +102,7 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
         {
             // Perform actions to play the card
             card.Play();
-            EventManager.Instance.InvokeEvent(Enums.EventType.CardPlayed, card);
+            EventManager.Instance.InvokeEvent(EventType.CardPlayed, card);
             UIManager.Instance.Hand.cardsInHand.Remove(this);
             Destroy(this.gameObject);
             // Optionally, you can implement additional logic here

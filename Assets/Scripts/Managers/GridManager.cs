@@ -288,25 +288,45 @@ public class GridManager : MonoBehaviour
 
     public void SubscribeToEvents()
     {
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
-        EventManager.Instance.AddListener<Ability>(Enums.EventType.AttackQueued, AddQueuedAttackHandler);
-        EventManager.Instance.AddListener<Ability>(Enums.EventType.AttackDequeued, RemoveQueuedAttackHandler);
-        EventManager.Instance.AddListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
+        EventManager.Instance.AddListener<Entity>(EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.AddListener<Entity>(EventType.EntityDestroyed, EntityDestroyedHandler);
+        EventManager.Instance.AddListener<Ability>(EventType.AttackQueued, AddQueuedAttackHandler);
+        EventManager.Instance.AddListener<Ability>(EventType.AttackDequeued, RemoveQueuedAttackHandler);
+        EventManager.Instance.AddListener(EventType.EndPlayerTurn, EndPlayerTurnHandler);
     }
 
     public void UnsubscribeToEvents()
     {
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
-        EventManager.Instance.RemoveListener<Ability>(Enums.EventType.AttackQueued, AddQueuedAttackHandler);
-        EventManager.Instance.RemoveListener<Ability>(Enums.EventType.AttackDequeued, RemoveQueuedAttackHandler);
-        EventManager.Instance.RemoveListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntityDestroyed, EntityDestroyedHandler);
+        EventManager.Instance.RemoveListener<Ability>(EventType.AttackQueued, AddQueuedAttackHandler);
+        EventManager.Instance.RemoveListener<Ability>(EventType.AttackDequeued, RemoveQueuedAttackHandler);
+        EventManager.Instance.RemoveListener(EventType.EndPlayerTurn, EndPlayerTurnHandler);
     }
 
     #endregion Event Handlers
 
     #region Helper functions
+
+    public static Vector3Int RoundToCardinal(Vector3 inputDirection)
+    {
+        // Calculate the angle in radians
+        float angle = Mathf.Atan2(inputDirection.y, inputDirection.x);
+
+        // Convert the angle to degrees
+        float angleDegrees = Mathf.Rad2Deg * angle;
+
+        // Round the angle to the nearest multiple of 90 degrees
+        float roundedAngleDegrees = Mathf.Round(angleDegrees / 90) * 90;
+
+        // Convert the rounded angle back to radians
+        float roundedAngle = Mathf.Deg2Rad * roundedAngleDegrees;
+
+        // Calculate the rounded direction vector
+        Vector3Int roundedDirection = new Vector3Int((int)Mathf.Cos(roundedAngle), (int)Mathf.Sin(roundedAngle), 0);
+
+        return roundedDirection;
+    }
 
     public List<Vector3Int> GetGridPositionsWithinDistance(Vector3Int centerPosition, int distance)
     {
@@ -392,7 +412,7 @@ public class GridManager : MonoBehaviour
             Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
 
             // Check if the entity is at the given grid position
-            if (((gridPositions.Contains(entityGridPosition) && entityMask.Count == 0)) || (gridPositions.Contains(entityGridPosition) && entityMask.Contains(entity.tag)))
+            if (gridPositions.Contains(entityGridPosition) && (entityMask.Count == 0 || entityMask.Contains(entity.tag)))
             {
                 results.Add(entity);
             }
@@ -447,7 +467,7 @@ public class GridManager : MonoBehaviour
 
 
     // Get positions in a grid from a starting position towards a specific direction at a certain distance
-    public Vector3[] GetPositionsInDirection(Vector3 startPos, Vector3 direction, int distance)
+    public static List<Vector3Int> GetPositionsInDirection(Vector3Int startPos, Vector3Int direction, int distance)
     {
         if (distance < 0)
         {
@@ -456,15 +476,15 @@ public class GridManager : MonoBehaviour
         }
 
         // List to store the positions
-        var positions = new List<Vector3>();
+        var positions = new List<Vector3Int>();
 
         for (int i = 1; i <= distance; i++)
         {
-            Vector3 newPos = startPos + direction * i;
+            Vector3Int newPos = startPos + direction * i;
             positions.Add(newPos);
         }
 
-        return positions.ToArray();
+        return positions;
     }
 
 

@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
-using static Enums;
 
-[CreateAssetMenu(menuName = "Cards/Card")]
+[CreateAssetMenu(menuName = "Cards/Basic Card")]
 [Serializable]
 public class Card : ScriptableObject
 {

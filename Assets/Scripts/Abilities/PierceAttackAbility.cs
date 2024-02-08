@@ -10,7 +10,6 @@ public class PierceAttackAbility : Ability
     private int afterHealth;
     public bool piercing = false;
     public int damage;
-    public Vector3Int targetPosition;
 
     public override void Undo()
     {
@@ -26,7 +25,7 @@ public class PierceAttackAbility : Ability
     public override void Perform()
     {
         base.Perform();
-        target = GridManager.Instance.GetEntityOnPosition(targetPosition);
+        target = GridManager.Instance.GetEntityOnPosition(TargetPosition);
 
         Debug.Log($"{_performer.name} attacks {target.name} for {damage} damage.");
         beforeHealth = target.Health;
@@ -59,7 +58,7 @@ public class PierceAttackBuilder : AbilityBuilder
 
     public override AbilityBuilder SetTargetPosition(Vector3Int position)
     {
-        attackAbility.targetPosition = position;
+        attackAbility.TargetPosition = position;
         return this;
     }
 }

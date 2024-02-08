@@ -23,11 +23,11 @@ public class PlayerHealthBar : MonoBehaviour
 
     public void SubscribeToEvents()
     {
-        EventManager.Instance.AddListener(Enums.EventType.PlayerDamageTaken, UpdateHealthBar);
+        EventManager.Instance.AddListener(EventType.PlayerAttacked, UpdateHealthBar);
     }
 
     public void UnsubscribeToEvents()
     {
-        EventManager.Instance.RemoveListener(Enums.EventType.PlayerDamageTaken, UpdateHealthBar);
+        EventManager.Instance.RemoveListener(EventType.PlayerAttacked, UpdateHealthBar);
     }
 }

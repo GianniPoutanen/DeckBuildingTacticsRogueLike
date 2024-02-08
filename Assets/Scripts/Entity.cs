@@ -7,27 +7,36 @@ public abstract class Entity : MonoBehaviour
     public bool CanDamage;
     [SerializeField]
     public virtual int Armour { get; set; }
-
     public int StartingHeatlh;
     [SerializeField]
     public virtual int MaxHealth { get { return StartingHeatlh; } set { StartingHeatlh = value; } }
     [SerializeField]
     public virtual int Health { get; set; }
 
+    [Header("Poison")]
+    public bool CanPosion = false;
+    public int PoisonAmount = 0;
+
     [Header("Health Bar Location")]
     public Transform healthBarLocation;
 
     public virtual void Start()
     {
-        EventManager.Instance.InvokeEvent<Entity>(Enums.EventType.EntitySpawned, this);
+        EventManager.Instance.InvokeEvent<Entity>(EventType.EntitySpawned, this);
         SubscribeToEvents();
         Health = MaxHealth;
     }
 
     public virtual void OnDestroy()
     {
-        EventManager.Instance.InvokeEvent<Entity>(Enums.EventType.EntityDestroyed, this);
+        EventManager.Instance.InvokeEvent<Entity>(EventType.EntityDestroyed, this);
         UnsubscribeToEvents();
+    }
+
+    public virtual void TurnStart()
+    {
+        PierceDamage(PoisonAmount);
+        PoisonAmount--;
     }
 
     #region Healing and Damage
@@ -84,7 +93,7 @@ public abstract class Entity : MonoBehaviour
 
     public virtual void DeathCheck()
     {
-        EventManager.Instance.InvokeEvent(Enums.EventType.EntityDestroyed);
+        EventManager.Instance.InvokeEvent(EventType.EntityDestroyed);
         if (Health <= 0)
             Destroy(this.gameObject);
     }

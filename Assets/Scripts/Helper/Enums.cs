@@ -2,47 +2,57 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class Enums
+public enum EventType
 {
-    public enum EventType
-    {
-        // Game Related
-        GameStart,
+    // Game Related
+    GameStart,
 
-        // Player
-        PlayerDamageTaken,
-        TurnTickComplete,
+    // Player
+    PlayerAttacked,
+    TurnTickComplete,
 
-        CardStartDragging,
-        CardEndDragging,
-        CardPlayed,
+    CardStartDragging,
+    CardEndDragging,
+    CardPlayed,
 
-        DeckShuffled,
+    DeckShuffled,
 
-        EndPlayerTurn,
-        //Entity
-        EntitySpawned,
-        EntityDestroyed,
+    EndPlayerTurn,
+    //Entity
+    EntitySpawned,
+    EntityDestroyed,
 
-        // Enemy 
-        EndEnemyTurn,
-        UpdateUI,
-        AttackQueued,
-        AttackDequeued,
-    }
+    // Enemy 
+    EntityTurn,
+    EndEnemyTurn,
+    UpdateUI,
+    AttackQueued,
+    AttackDequeued,
+}
 
-    public enum PlayerStates
-    {
-        Waiting,
-        PlayerTurn,
-    }
+public enum PlayerStates
+{
+    Waiting,
+    PlayerTurn,
+}
 
-    public enum CastType
-    {
-        Simple,
-        WithinDistance,
-        Cone,
-        Area,
-        // Add more cast types if needed
-    }
+public enum CastType
+{
+    Simple,
+    WithinDistance,
+    Cone,
+    Area,
+    // Add more cast types if needed
+}
+
+public enum JsonDataType
+{
+    DeckData,
+    GameSettings,
+    PlayerStats,
+}
+
+public enum UnlockType
+{
+    CharacterA,
 }

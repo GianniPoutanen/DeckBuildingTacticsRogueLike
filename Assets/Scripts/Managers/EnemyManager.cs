@@ -60,11 +60,12 @@ public class EnemyManager : MonoBehaviour
         {
             foreach (Enemy enemy in enemies)
             {
+                EventManager.Instance.InvokeEvent<Entity>(EventType.EntityTurn, enemy);
                 // Implement logic to command the enemy
                 yield return enemy.DoTurn();
             }
         }
-        EventManager.Instance.InvokeEvent(Enums.EventType.EndEnemyTurn);
+        EventManager.Instance.InvokeEvent(EventType.EndEnemyTurn);
         yield return null;
     }
 
@@ -85,16 +86,16 @@ public class EnemyManager : MonoBehaviour
 
     public void SubscribeToEvents()
     {
-        EventManager.Instance.AddListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
+        EventManager.Instance.AddListener(EventType.EndPlayerTurn, EndPlayerTurnHandler);
+        EventManager.Instance.AddListener<Entity>(EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.AddListener<Entity>(EventType.EntityDestroyed, EntityDestroyedHandler);
     }
 
     public void UnsubscribeToEvents()
     {
-        EventManager.Instance.RemoveListener(Enums.EventType.EndPlayerTurn, EndPlayerTurnHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, EntitySpawnedHandler);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntityDestroyed, EntityDestroyedHandler);
+        EventManager.Instance.RemoveListener(EventType.EndPlayerTurn, EndPlayerTurnHandler);
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntitySpawned, EntitySpawnedHandler);
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntityDestroyed, EntityDestroyedHandler);
     }
 
     #endregion Event Handlers

@@ -20,10 +20,3 @@ public interface IAbilityBuilder
 {
     Ability Build();
 }
-
-public interface IEnemyAttack
-{
-    public bool CanPerform(Vector3 position);
-    public void ActionAttack();
-    public List<Vector3Int> GetEffectivePositions();
-}

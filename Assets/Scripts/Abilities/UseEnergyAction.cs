@@ -12,19 +12,19 @@ public class UseEnergyAction : Ability
         oldEnergyAmount = PlayerManager.Instance.CurrentEnergy;
         newEnergyAmount = PlayerManager.Instance.CurrentEnergy - amount;
         PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+        EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 
     public override void Redo()
     {
         PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+        EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 
     public override void Undo()
     {
         PlayerManager.Instance.CurrentEnergy = oldEnergyAmount;
-        EventManager.Instance.InvokeEvent(Enums.EventType.UpdateUI);
+        EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 
     public override bool CanPerform(Vector3Int position)

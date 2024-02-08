@@ -157,14 +157,14 @@ public class UIManager : MonoBehaviour
     #region Event Handlers
     public void SubscribeToEvents()
     {
-        EventManager.Instance.AddListener(Enums.EventType.UpdateUI, UpdateUI);
-        EventManager.Instance.AddListener<Entity>(Enums.EventType.EntitySpawned, CreateHealthBar);
+        EventManager.Instance.AddListener(EventType.UpdateUI, UpdateUI);
+        EventManager.Instance.AddListener<Entity>(EventType.EntitySpawned, CreateHealthBar);
     }
 
     public void UnsubscribeToEvents()
     {
-        EventManager.Instance.RemoveListener(Enums.EventType.UpdateUI, UpdateUI);
-        EventManager.Instance.RemoveListener<Entity>(Enums.EventType.EntitySpawned, CreateHealthBar);
+        EventManager.Instance.RemoveListener(EventType.UpdateUI, UpdateUI);
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntitySpawned, CreateHealthBar);
     }
     #endregion Event Handlers
 }

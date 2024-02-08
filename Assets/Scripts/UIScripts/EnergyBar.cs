@@ -12,14 +12,14 @@ public class EnergyBar : MonoBehaviour
 
     private void Start()
     {
-        EventManager.Instance.AddListener(Enums.EventType.UpdateUI, UpdateEnergyBar);
+        EventManager.Instance.AddListener(EventType.UpdateUI, UpdateEnergyBar);
         barRect = bar.GetComponent<RectTransform>();
         UpdateEnergyBar();
     }
 
     private void OnDestroy()
     {
-        EventManager.Instance.RemoveListener(Enums.EventType.UpdateUI, UpdateEnergyBar);
+        EventManager.Instance.RemoveListener(EventType.UpdateUI, UpdateEnergyBar);
     }
 
     public void UpdateEnergyBar()

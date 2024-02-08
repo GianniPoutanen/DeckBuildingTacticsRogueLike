@@ -16,7 +16,7 @@ public class Archer : Enemy
         // Attack #1
         if (entitiesInStraightAttackRange.Contains(PlayerManager.Instance.Player))
         {
-            new StraightAttackBuilder();
+
         }
     }
 }
