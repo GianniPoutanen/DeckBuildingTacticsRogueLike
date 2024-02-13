@@ -11,6 +11,8 @@ public class TopMapGraphManager : MonoBehaviour
     private List<Transform> nodes = new List<Transform>();
     private Transform exitPoint;
 
+    public Transform currentNode;
+
     void Start()
     {
         // Create nodes

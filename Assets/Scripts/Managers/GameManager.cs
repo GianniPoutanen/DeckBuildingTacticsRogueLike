@@ -34,8 +34,17 @@ public class GameManager : MonoBehaviour
         LoadGameSettings();
     }
 
+    public void SaveGameSettings()
+    {
+        GameSettings loadedSettings = new GameSettings();
+        // Get game settings
 
-    private void LoadGameSettings()
+        SecureJsonManager.SaveEncryptedJsonData(JsonDataType.GameSettings, loadedSettings);
+
+        // Now loadedSettings will contain the default settings
+    }
+
+    public void LoadGameSettings()
     {
         GameSettings loadedSettings = SecureJsonManager.LoadEncryptedJsonData<GameSettings>(JsonDataType.GameSettings);
 

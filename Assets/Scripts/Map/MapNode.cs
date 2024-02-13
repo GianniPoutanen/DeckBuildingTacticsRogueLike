@@ -8,7 +8,7 @@ public class MapNode : MonoBehaviour
     private void OnMouseDown()
     {
         // Handle mouse click on the node
-        LoadScene();
+        LoadScene();    
     }
 
     void LoadScene()
