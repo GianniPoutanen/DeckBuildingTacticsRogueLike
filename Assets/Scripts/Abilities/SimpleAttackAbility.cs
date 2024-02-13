@@ -16,12 +16,24 @@ public class SimpleAttackAbility : Ability
     private int afterArmour;
     public int damage;
     [HideInInspector]
-    public Vector3Int targetPosition;
+    public bool global;
     public int range;
+
+    public SimpleAttackAbility() 
+    {
+
+    }
+
+    public SimpleAttackAbility(SimpleAttackAbility ability) : base(ability)
+    {
+        range = ability.range;
+        global = ability.global;
+        damage = ability.damage;
+    }
 
     public override void Undo()
     {
-        var target = GridManager.Instance.GetEntityOnPosition(targetPosition, entityMask);
+        var target = GridManager.Instance.GetEntityOnPosition(TargetPosition, entityMask);
         Debug.Log($"Undoing attack on {target.name}.");
         if (target != null)
             target.Health = beforeHealth;
@@ -29,14 +41,14 @@ public class SimpleAttackAbility : Ability
 
     public override void Redo()
     {
-        var target = GridManager.Instance.GetEntityOnPosition(targetPosition, entityMask);
+        var target = GridManager.Instance.GetEntityOnPosition(TargetPosition, entityMask);
         Debug.Log($"Redoing attack on {target.name}.");
         if (target != null)
             target.Health = afterHealth;
     }
     public override void Perform()
     {
-        var target = GridManager.Instance.GetEntityOnPosition(targetPosition, entityMask);
+        var target = GridManager.Instance.GetEntityOnPosition(TargetPosition, entityMask);
         base.Perform();
         if (target != null)
         {
@@ -52,21 +64,22 @@ public class SimpleAttackAbility : Ability
 
     public override bool CanPerform(Vector3Int position)
     {
-        var target = GridManager.Instance.GetEntityOnPosition(targetPosition, entityMask);
-        return target != null && target != _performer;
+        var target = GridManager.Instance.GetEntityOnPosition(position, entityMask);
+        return target != null && target != _performer && (global || GridManager.Instance.GetWalkingDistance(_performer.targetGridPosition, position) <= range);
     }
 
     public override List<Vector3Int> GetAbilityPositions()
     {
-        return new List<Vector3Int> { targetPosition };
+        return new List<Vector3Int> { TargetPosition };
     }
 
     public override List<Vector3Int> GetPossiblePositions(Vector3Int originPosition)
     {
         List<Vector3Int> results = new List<Vector3Int>();
-        foreach (Vector3Int pos in GridManager.Instance.GetGridPositionsWithinDistance(originPosition, range))
-            if (GridManager.Instance.GetWalkingDistance(originPosition, pos) <= range)
-                results.Add(pos);
+        if (!global)
+            foreach (Vector3Int pos in GridManager.Instance.GetGridPositionsWithinDistance(originPosition, range))
+                if (GridManager.Instance.GetWalkingDistance(originPosition, pos) <= range && !pos.Equals(Performer.targetGridPosition))
+                    results.Add(pos);
         return results;
     }
 }
@@ -91,22 +104,28 @@ public class SimpleAttackBuilder : AbilityBuilder
         return attackAbility;
     }
 
-    public override AbilityBuilder SetDamage(int damage)
-    {
-        attackAbility.damage = damage;
-        return this;
-    }
-
     public override AbilityBuilder SetPerformer(GridEntity performer)
     {
         attackAbility.Performer = performer;
-        return this;
+        return base.SetPerformer(performer);
     }
 
     public override AbilityBuilder SetTargetPosition(Vector3Int position)
     {
-        attackAbility.targetPosition = position * new Vector3Int(1, 1, 0);
-        return this;
+        attackAbility.TargetPosition = position;
+        return base.SetTargetPosition(position);
     }
 
+    public override AbilityBuilder SetDamage(int amount)
+    {
+        attackAbility.damage = amount;
+        return base.SetDamage(amount);
+    }
+
+    public override AbilityBuilder SetRange(int range)
+    {
+        attackAbility.range = range;
+        attackAbility.global = false;
+        return this;
+    }
 }

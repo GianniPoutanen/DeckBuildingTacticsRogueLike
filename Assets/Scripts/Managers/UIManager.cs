@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Xml.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -69,6 +70,10 @@ public class UIManager : MonoBehaviour
     [Header("Enemy UI References")]
     public GameObject smallDynamicHealthBarPrefab;
 
+    [Header("Panels")]
+    public AttacksPanelSingleton attackPanel;
+
+    public Stack<UIElement> panelStack = new Stack<UIElement>();
 
     private void Start()
     {
@@ -83,6 +88,34 @@ public class UIManager : MonoBehaviour
     private void Update()
     {
         SetUIObjectUnderMouse();
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            CloseLastUI();
+        }
+    }
+
+    public void OpenUI(UIElement element)
+    {
+        panelStack.Push(element);
+        element.Open();
+    }
+
+
+    public void OpenUI(UIPanels panel)
+    {
+        switch (panel)
+        {
+            case UIPanels.AttackPanel:
+                attackPanel.Open();
+                panelStack.Push(attackPanel);
+                break;
+        }
+    }
+
+    public void CloseLastUI()
+    {
+        if (panelStack.Count > 0)
+            panelStack.Pop().Close();
     }
 
     private void SetUIObjectUnderMouse()
@@ -128,7 +161,7 @@ public class UIManager : MonoBehaviour
 
     public void CreateHealthBar(Entity entity)
     {
-            if (entity.tag == "Enemy")
+        if (entity.tag == "Enemy")
         {
             // Instantiate a new health bar from the prefab
             GameObject newHealthBar = Instantiate(smallDynamicHealthBarPrefab, canvas.transform);

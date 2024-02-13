@@ -22,6 +22,12 @@ public class GridEntity : Entity
         MoveTowardsTarget();
     }
 
+    public override void Destroy()
+    {
+        DestroyEntityAbility destroyAction = (DestroyEntityAbility)AbilityBuilder.GetBuilder(new DestroyEntityAbility()).SetPerformer(this).Build();
+        destroyAction.Perform();
+    }
+
     private void MoveTowardsTarget()
     {
         // Calculate the distance between the current position and the target position

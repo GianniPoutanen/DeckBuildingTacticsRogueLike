@@ -20,6 +20,7 @@ public class DrawCardAction : Ability, IUndoRedoAction
     public override void Undo()
     {
         UIManager.Instance.Hand.RemoveCard(card);
+        PlayerManager.Instance.activeDeck.Insert(card, 0);
     }
 
     public override void Redo()
@@ -28,6 +29,6 @@ public class DrawCardAction : Ability, IUndoRedoAction
         {
             action.Redo();
         }
-        PlayerManager.Instance.activeDeck.Insert(card, 0);
+        PlayerManager.Instance.activeDeck.DrawCard();
     }
 }

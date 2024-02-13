@@ -10,10 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 383c66ae0a0e57c43b8a441d5e76adda, type: 3}
-  m_Name: SimpleAttack_5
+  m_Name: Stab
   m_EditorClassIdentifier: 
   _performer: {fileID: 0}
+  Description: 
   entityMask: []
   damage: 5
-  targetPosition: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: -1, z: 0}
+  global: 0
   range: 2

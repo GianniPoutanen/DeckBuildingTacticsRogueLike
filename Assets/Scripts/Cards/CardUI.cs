@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEditor.Playables;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -23,6 +24,12 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
     private Vector2 originalSize;
     public float currentSizeFactor;
 
+    [Header("Ability On Card")]
+    public RectTransform content;
+    public Sprite defaultIcon;
+    public AbilityPanelEntry abilityEntryObject;
+    private List<AbilityPanelEntry> entries = new List<AbilityPanelEntry>();
+
     private List<Vector3Int> castSelectionLocation = new List<Vector3Int>();
 
 
@@ -32,6 +39,7 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
         originalLocalPosition = (Vector2)transform.localPosition;
         tmpText.text = card.cardName;
         originalSize = RectTransform.sizeDelta;
+        BuildAbilityCard();
     }
 
     public override void Update()
@@ -120,5 +128,38 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
             UIManager.Instance.Hand.cardUnderMouse = null;
 
         this.targetSizeFactor = 1f;
+    }
+
+    public void BuildAbilityCard()
+    {
+
+        foreach (Transform child in content)
+            Destroy(child.gameObject);
+
+        foreach (AbilityWrapper abilityWrapper in card.abilities)
+        {
+            Ability abilityOnCard = abilityWrapper.ability;
+            AbilityPanelEntry newEntry = NewEntry();
+            newEntry.BuildEntry(abilityOnCard);
+        }
+        OrderEntries();
+    }
+
+    public void OrderEntries()
+    {
+        float height = abilityEntryObject.GetComponent<RectTransform>().sizeDelta.y;
+        for (int i = 0; i < entries.Count; i++)
+        {
+            RectTransform rect = entries[i].GetComponent<RectTransform>();
+
+            entries[i].GetComponent<RectTransform>().anchoredPosition = new Vector2(0, (height * (float)i) - (height * ((float)entries.Count / 2f)));
+        }
+    }
+
+    public AbilityPanelEntry NewEntry()
+    {
+        AbilityPanelEntry entry = GameObject.Instantiate(abilityEntryObject, content);
+        entries.Add(entry);
+        return entry;
     }
 }

@@ -44,8 +44,6 @@ public class EnemyManager : MonoBehaviour
         UnsubscribeToEvents();
     }
 
-
-
     private List<Enemy> enemies = new List<Enemy>();
 
     public void EndPlayerTurnHandler()
@@ -58,13 +56,19 @@ public class EnemyManager : MonoBehaviour
     {
         if (enemies != null && enemies.Count > 0)
         {
-            foreach (Enemy enemy in enemies)
+            int enemyCount = enemies.Count;
+            for (int i = 0; i < enemyCount; i++)
             {
-                EventManager.Instance.InvokeEvent<Entity>(EventType.EntityTurn, enemy);
+                CameraFocalPointSingleton.Instance.SetFocal(enemies[i].gameObject);
+                yield return new WaitForSeconds(0.2f);
+                EventManager.Instance.InvokeEvent<Entity>(EventType.EntityTurn, enemies[i]);
                 // Implement logic to command the enemy
-                yield return enemy.DoTurn();
+                yield return enemies[i].DoTurn();
+                yield return new WaitForSeconds(0.2f);
+                if (enemies.Count != enemyCount) enemyCount--;
             }
         }
+        CameraFocalPointSingleton.Instance.SetFocal(PlayerManager.Instance.Player.gameObject);
         EventManager.Instance.InvokeEvent(EventType.EndEnemyTurn);
         yield return null;
     }
@@ -81,7 +85,7 @@ public class EnemyManager : MonoBehaviour
     public void EntityDestroyedHandler(Entity entity)
     {
         if (entity is Enemy)
-            enemies.Add((Enemy)entity);
+            enemies.Remove((Enemy)entity);
     }
 
     public void SubscribeToEvents()

@@ -86,13 +86,22 @@ public class GridManager : MonoBehaviour
 
     public void UpdateEnemyAttackTiles()
     {
-        BoundsInt bounds = floorTilemap.cellBounds;
-        enemyAttackTilemap.ClearAllTiles();
         List<Vector3Int> selectedGridPositions = new List<Vector3Int>();
-
-        foreach (var ability in enemyAbilitiesQueued)
-            selectedGridPositions.AddRange(ability.GetAbilityPositions());
-
+        foreach (Entity entity in entities)
+        {
+            if (entity is Enemy)
+            {
+                Enemy enemy = (Enemy)entity;
+                if (enemy.attackQueue.Count > 0)
+                {
+                    AbilityBuilder.GetBuilder(enemy.attackQueue.Peek()).SetPerformer(enemy);
+                    selectedGridPositions.AddRange(enemy.attackQueue.Peek().GetAbilityPositions());
+                }
+            }
+        }
+        foreach (var pos in selectedGridPositions)
+            Debug.Log(pos);
+        BoundsInt bounds = floorTilemap.cellBounds;
         foreach (var position in bounds.allPositionsWithin)
         {
             TileBase currentTile = floorTilemap.GetTile(position);
@@ -265,7 +274,7 @@ public class GridManager : MonoBehaviour
     public void EntityDestroyedHandler(Entity entity)
     {
         if (entity is GridEntity)
-            entities.Add((GridEntity)entity);
+            entities.Remove((GridEntity)entity);
     }
 
     public void AddQueuedAttackHandler(Ability ability)
@@ -379,16 +388,19 @@ public class GridManager : MonoBehaviour
         // Loop through each entity
         foreach (GridEntity entity in entities)
         {
-            // Get the entity's position in world coordinates
-            Vector3Int entityPosition = entity.targetGridPosition;
-
-            // Convert the entity's position to grid coordinates
-            Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
-
-            // Check if the entity is at the given grid position
-            if (pos.Equals(entityGridPosition) && (entityMask.Count == 0 || entityMask.Contains(entity.tag)))
+            if (entity.enabled)
             {
-                return entity;
+                // Get the entity's position in world coordinates
+                Vector3Int entityPosition = entity.targetGridPosition;
+
+                // Convert the entity's position to grid coordinates
+                Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
+                
+                // Check if the entity is at the given grid position
+                if (pos.Equals(entityGridPosition) && (entityMask == null || entityMask.Count == 0 || entityMask.Contains(entity.tag)))
+                {
+                    return entity;
+                }
             }
         }
         return null;
@@ -443,7 +455,7 @@ public class GridManager : MonoBehaviour
 
     public int GetWalkingDistance(Vector3Int startPos, Vector3Int endPos)
     {
-        return FindPath(startPos, endPos).Count - 1;
+        return FindPath(startPos, endPos).Count;
     }
 
     public List<Vector3Int> GetPositionsInDistance(Vector3Int position, int distance, bool includingDiagonalMovement)
@@ -466,8 +478,14 @@ public class GridManager : MonoBehaviour
     }
 
 
-    // Get positions in a grid from a starting position towards a specific direction at a certain distance
-    public static List<Vector3Int> GetPositionsInDirection(Vector3Int startPos, Vector3Int direction, int distance)
+    /// <summary>
+    /// Get positions in a grid from a starting position towards a specific direction at a certain distance
+    /// </summary>
+    /// <param name="startPos"></param>
+    /// <param name="direction"></param>
+    /// <param name="distance"></param>
+    /// <returns></returns>
+    public List<Vector3Int> GetPositionsInDirection(Vector3Int startPos, Vector3Int direction, int distance)
     {
         if (distance < 0)
         {
@@ -481,6 +499,10 @@ public class GridManager : MonoBehaviour
         for (int i = 1; i <= distance; i++)
         {
             Vector3Int newPos = startPos + direction * i;
+            // Return if hit end
+            if (!floorTilemap.HasTile(newPos))
+                return positions;
+
             positions.Add(newPos);
         }
 

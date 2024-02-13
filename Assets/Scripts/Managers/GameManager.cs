@@ -28,8 +28,11 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
+    public CameraController CameraController { get; private set; }
+
     private void Start()
     {
+        CameraController = Camera.main.GetComponent<CameraController>();
         EventManager.Instance.InvokeEvent(EventType.GameStart);
         LoadGameSettings();
     }
@@ -66,6 +69,8 @@ public class GameManager : MonoBehaviour
         Debug.Log($"Resolution: {settings.resolutionWidth}x{settings.resolutionHeight}");
         Debug.Log($"Fullscreen: {settings.fullscreen}");
         Debug.Log($"Graphics Quality: {settings.graphicsQuality}");
+        Debug.Log($"Camera Shake: {settings.cameraShakeIntensity}");
+        CameraController.shakeIntensityFactor = settings.cameraShakeIntensity;
         Debug.Log($"Show Tutorial: {settings.showTutorial}");
     }
 }

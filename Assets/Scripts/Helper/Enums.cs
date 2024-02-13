@@ -56,3 +56,16 @@ public enum UnlockType
 {
     CharacterA,
 }
+
+public enum UIPanels
+{
+    AttackPanel
+}
+
+public enum AbilityTypes
+{
+    BasicAttack,
+    StraightAttack,
+    SurroundingAttack,
+    MoveTarget,
+}

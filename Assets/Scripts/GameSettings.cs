@@ -9,6 +9,7 @@ public class GameSettings
     public bool fullscreen = true;
     public QualityLevel graphicsQuality = QualityLevel.High;
     public bool showTutorial = true;
+    public float cameraShakeIntensity = 1;
 
     // You can add more settings as needed
 

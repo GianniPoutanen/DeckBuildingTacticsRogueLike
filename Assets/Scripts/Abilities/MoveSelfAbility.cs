@@ -1,5 +1,6 @@
 
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Abilities/Movement/Move Self Action")]
@@ -10,16 +11,30 @@ public class MoveSelfAbility : Ability
     [HideInInspector]
     public int range;
 
+    private int prevPlayerNumMovement;
+    private int newPlayerNumMovement;
+
+    public MoveSelfAbility()
+    {
+    }
+
+    public MoveSelfAbility(MoveSelfAbility ability) : base(ability)
+    {
+        this.range = ability.range;
+    }
+
     public override void Undo()
     {
         _performer.transform.position = oldPosition;
         _performer.targetGridPosition = oldPosition;
 
         if (_performer == PlayerManager.Instance.Player)
-            PlayerManager.Instance.numMovement++;
+        {
+            PlayerManager.Instance.numMovement = prevPlayerNumMovement;
 
-        if (PlayerManager.Instance.numMovement > PlayerManager.Instance.maxMovement)
-            PlayerManager.Instance.numMovement = PlayerManager.Instance.maxMovement;
+            if (PlayerManager.Instance.numMovement > PlayerManager.Instance.maxMovement)
+                PlayerManager.Instance.numMovement = PlayerManager.Instance.maxMovement;
+        }
     }
 
     public override void Redo()
@@ -28,10 +43,13 @@ public class MoveSelfAbility : Ability
         _performer.targetGridPosition = newPosition;
 
         if (_performer == PlayerManager.Instance.Player)
-            PlayerManager.Instance.numMovement--;
+        {
+            PlayerManager.Instance.numMovement = newPlayerNumMovement;
 
-        if(PlayerManager.Instance.numMovement <= 0)
-            PlayerManager.Instance.numMovement = 0;
+            if (PlayerManager.Instance.numMovement <= 0)
+                PlayerManager.Instance.numMovement = 0;
+        }
+
     }
 
     public override void Perform()
@@ -39,8 +57,20 @@ public class MoveSelfAbility : Ability
         base.Perform();
         Debug.Log("Moving " + _performer + " from " + oldPosition + " to " + newPosition);
         oldPosition = _performer.targetGridPosition;
+
+        if (_performer == PlayerManager.Instance.Player)
+        {
+            prevPlayerNumMovement = PlayerManager.Instance.numMovement;
+        }
+
         _performer.targetGridPosition = TargetPosition * new Vector3Int(1, 1, 0);
         newPosition = TargetPosition;
+
+        if (_performer == PlayerManager.Instance.Player)
+        {
+            newPlayerNumMovement = PlayerManager.Instance.numMovement;
+        }
+
     }
 
     public override bool CanPerform(Vector3Int position)
@@ -57,17 +87,13 @@ public class MoveSelfAbility : Ability
     }
 }
 
-public class MoveSelfBuilder : AbilityBuilder  
+public class MoveSelfBuilder : AbilityBuilder
 {
     MoveSelfAbility moveSelfAbility;
 
     public override Ability Build()
     {
         return moveSelfAbility;
-    }
-    public MoveSelfBuilder()
-    {
-        moveSelfAbility = new MoveSelfAbility(); ;
     }
 
     public MoveSelfBuilder(MoveSelfAbility ability)

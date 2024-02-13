@@ -22,6 +22,8 @@ public class UndoRedoManager : MonoBehaviour
     private Stack<IUndoRedoAction> undoStack = new Stack<IUndoRedoAction>();
     private Stack<IUndoRedoAction> redoStack = new Stack<IUndoRedoAction>();
 
+    public IUndoRedoAction NextUndo { get { return undoStack.Count > 0 ? undoStack.Peek() : null; } }
+    public IUndoRedoAction NextRedo { get { return redoStack.Count > 0 ? redoStack.Peek() : null; } }
 
     // Method to push an action onto the undo stack
     public void Clear()
@@ -68,7 +70,7 @@ public class UndoRedoManager : MonoBehaviour
             Ability action = undoStack.Pop() as Ability;
             if (action != null)
             {
-                if (action.Performer != PlayerManager.Instance.Player)
+                if (action.Performer != PlayerManager.Instance.Player && action is not CompositeAction)
                 {
                     action.Undo();
                     redoStack.Push(action);

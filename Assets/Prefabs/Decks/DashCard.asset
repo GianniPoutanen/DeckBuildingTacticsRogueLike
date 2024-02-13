@@ -15,7 +15,7 @@ MonoBehaviour:
   cardName: Dash
   description: 
   cost: 1
-  range: 2
+  range: 4
   castType: 0
   abilities:
   - ability: {fileID: 11400000, guid: aaddbe1fcbdc2fa41b9636a1f96a0bfb, type: 2}

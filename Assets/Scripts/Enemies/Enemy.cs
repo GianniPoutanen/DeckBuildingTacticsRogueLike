@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor.Playables;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -18,18 +19,19 @@ public class Enemy : GridEntity
     public int damage = 3;
 
     [SerializeField]
-    public EnemyAttack quickAttack;
-    [SerializeField]
-    public EnemyAttack[] possibleAttacks;
+    public List<Attack> possibleAttacks = new List<Attack>();
     protected PlayerController Player
     {
         get { return PlayerManager.Instance.Player; }
     }
 
-
     public override void Start()
     {
         base.Start();
+
+        foreach (Attack attack in possibleAttacks)
+            SetUpAttack(attack);
+
     }
     public override void OnDestroy()
     {
@@ -45,7 +47,8 @@ public class Enemy : GridEntity
     {
         if (Input.GetMouseButtonDown(0))
         {
-            GridManager.Instance.UpdateSelectedEnemyAttackTiles(quickAttack.triggerAbility.GetPossiblePositions(targetGridPosition));
+            AttacksPanelSingleton.Instance.Attacks = possibleAttacks;
+            UIManager.Instance.OpenUI(UIPanels.AttackPanel);
         }
     }
     public virtual IEnumerator DoTurn()
@@ -55,51 +58,40 @@ public class Enemy : GridEntity
             // Move towards player default
             Ability ability = attackQueue.Dequeue();
             ability.Perform();
-            EventManager.Instance.InvokeEvent(EventType.AttackDequeued, ability);
+            GridManager.Instance.UpdateEnemyAttackTiles();
         }
         else
         {
-            List<EnemyAttack> possibleAttacks = new List<EnemyAttack>();
-            foreach(EnemyAttack attack in possibleAttacks)
-            {
-                if (attack.triggerAbility.CanPerform(Player.targetGridPosition))
-                    possibleAttacks.Add(attack);
-            }
-            if (possibleAttacks.Count > 0)
-            {
-                int index = Random.Range(0, possibleAttacks.Count);
-                AbilityBuilder abilityBuilder = AbilityBuilder.GetBuilder(possibleAttacks[index].triggerAbility);
-                abilityBuilder.SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build().Perform();
-                foreach (Ability ability in possibleAttacks[index].followUpAbilities)
-                    attackQueue.Enqueue(AbilityBuilder.GetBuilder(ability).SetPerformer(this).SetTargetPosition(Player.targetGridPosition).Build());
-            }
-            else
+            TryQueueAttack();
+
+            if (attackQueue.Count == 0)
             {
                 // Move towards player default
                 PerformMoveAction();
             }
         }
 
-        AfterTurnCheckCanAttack();
         yield return null;
     }
 
-    public virtual void AfterTurnCheckCanAttack()
+    public virtual void TryQueueAttack()
     {
-        List<EnemyAttack> possibleAttacks = new List<EnemyAttack>();
-        foreach (EnemyAttack attack in possibleAttacks)
+        List<Attack> attacks = new List<Attack>();
+        foreach (Attack attack in possibleAttacks)
         {
+            AbilityBuilder.GetBuilder(attack.triggerAbility).SetPerformer(this).Build();
             if (attack.triggerAbility.CanPerform(Player.targetGridPosition))
-                possibleAttacks.Add(attack);
+                attacks.Add(attack);
         }
-        if (possibleAttacks.Count > 0)
+        if (attacks.Count > 0)
         {
-            int index = Random.Range(0, possibleAttacks.Count);
-            AbilityBuilder abilityBuilder = AbilityBuilder.GetBuilder(possibleAttacks[index].triggerAbility);
-            attackQueue.Enqueue(abilityBuilder.SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build());
-            foreach (Ability ability in possibleAttacks[index].followUpAbilities)
+            int index = Random.Range(0, attacks.Count);
+            AbilityBuilder abilityBuilder = AbilityBuilder.GetBuilder(attacks[index].triggerAbility);
+            (abilityBuilder.SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build()).Perform();
+            foreach (Ability ability in attacks[index].followUpAbilities)
                 attackQueue.Enqueue(AbilityBuilder.GetBuilder(ability).SetPerformer(this).SetTargetPosition(Player.targetGridPosition).Build());
         }
+        GridManager.Instance.UpdateEnemyAttackTiles();
     }
 
     public virtual void PerformMoveAction()
@@ -112,8 +104,7 @@ public class Enemy : GridEntity
 
     public void StepTowardsGridPosition(Vector3Int nextGridPosition)
     {
-        Ability action = (new MoveSelfBuilder()).SetPerformer(this).SetTargetPosition(nextGridPosition).SetRange(1).Build();
-        action.Perform();
+        AbilityBuilder.GetBuilder(new MoveSelfAbility()).SetPerformer(this).SetTargetPosition(nextGridPosition).SetRange(1).Build().Perform();
     }
 
     void FindPathToPlayer()
@@ -126,5 +117,14 @@ public class Enemy : GridEntity
             path += p + " ";
         Debug.Log(path);
         pathIndex = 0;
+    }
+
+    void SetUpAttack(Attack attack)
+    {
+        List<Ability> results = new List<Ability>();
+        attack.triggerAbility = AbilityBuilder.GetBuilder(attack.triggerAbility).SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build();
+        foreach (Ability ability in attack.followUpAbilities)
+            results.Add(AbilityBuilder.GetBuilder(ability).SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build());
+        attack.followUpAbilities = results;
     }
 }

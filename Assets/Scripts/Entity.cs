@@ -3,6 +3,7 @@ using UnityEngine;
 
 public abstract class Entity : MonoBehaviour
 {
+    public bool Enabled = true;
     [Header("Base Entity Stats")]
     public bool CanDamage;
     [SerializeField]
@@ -10,8 +11,9 @@ public abstract class Entity : MonoBehaviour
     public int StartingHeatlh;
     [SerializeField]
     public virtual int MaxHealth { get { return StartingHeatlh; } set { StartingHeatlh = value; } }
+    public int CurrentHeatlh;
     [SerializeField]
-    public virtual int Health { get; set; }
+    public virtual int Health { get { return CurrentHeatlh; } set { CurrentHeatlh = value; } }
 
     [Header("Poison")]
     public bool CanPosion = false;
@@ -37,6 +39,11 @@ public abstract class Entity : MonoBehaviour
     {
         PierceDamage(PoisonAmount);
         PoisonAmount--;
+    }
+
+    public virtual void Destroy()
+    {
+        throw new System.Exception();
     }
 
     #region Healing and Damage
@@ -95,7 +102,7 @@ public abstract class Entity : MonoBehaviour
     {
         EventManager.Instance.InvokeEvent(EventType.EntityDestroyed);
         if (Health <= 0)
-            Destroy(this.gameObject);
+            this.Destroy();
     }
 
     public virtual bool CanMoveTo(Vector3Int position)

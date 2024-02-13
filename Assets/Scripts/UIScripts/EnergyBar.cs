@@ -40,7 +40,7 @@ public class EnergyBar : MonoBehaviour
             //image.rectTransform.rect.Set((barRect.rect.width / maxEnergy) * i, 0, (barRect.rect.width / maxEnergy), barRect.rect.height);
             //rectTransform.rect.Set(100 * i, 0, 100, 50);
             rectTransform.localPosition = new Vector3((barRect.rect.width / maxEnergy) * i, 0, 0);
-            rectTransform.sizeDelta = new Vector2((barRect.rect.width / maxEnergy), barRect.rect.height);
+            rectTransform.sizeDelta = new Vector2((barRect.rect.width / maxEnergy), 0);
         }
     }
 

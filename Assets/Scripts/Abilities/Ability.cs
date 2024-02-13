@@ -10,9 +10,18 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
     public GridEntity Performer { get { return _performer; } set { _performer = value; } }
     public Vector3Int TargetPosition { get; set; }
 
-
     [SerializeField]
     public List<string> entityMask;
+
+    public Ability()
+    {
+    }
+
+    public Ability(Ability ability)
+    {
+        this.Performer = ability.Performer;
+        this.TargetPosition = ability.TargetPosition;
+    }
 
     public virtual void Redo()
     {
@@ -31,21 +40,28 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
 
     public virtual bool CanPerform(Vector3Int targetPosition)
     {
-        return true;
+        TargetPosition = targetPosition;
+        return CanPerform();
     }
 
+    public virtual bool CanPerform()
+    {
+        return true;
+    }
 
     public virtual List<Vector3Int> GetAbilityPositions()
     {
         return new List<Vector3Int>();
     }
 
-
+    public List<Vector3Int> GetPossiblePositions()
+    {
+        return GetPossiblePositions(TargetPosition);
+    }
     public virtual List<Vector3Int> GetPossiblePositions(Vector3Int originPosition)
     {
         return new List<Vector3Int>();
     }
-
 
     public virtual void HighlightSelectedPositions()
     {
@@ -122,14 +138,18 @@ public abstract class AbilityBuilder : IAbilityBuilder
     {
         switch (ability)
         {
+            case DestroyEntityAbility:
+                return new DestroyEntityBuilder((DestroyEntityAbility) ability);
             case MoveSelfAbility:
-                return new MoveSelfBuilder((MoveSelfAbility)ability);
+                return new MoveSelfBuilder(new MoveSelfAbility((MoveSelfAbility)ability));
             case MoveTargetAbility:
                 return new MoveTargetBuilder((MoveTargetAbility)ability);
             case SimpleAttackAbility:
-                return new SimpleAttackBuilder((SimpleAttackAbility)ability);
+                return new SimpleAttackBuilder(new SimpleAttackAbility((SimpleAttackAbility)ability));
             case StraightAttackAbility:
                 return new StraightAttackBuilder((StraightAttackAbility)ability);
+            case CompositeAction:
+                return new CompositeAbilityBuilder((CompositeAction)ability);
         }
         return null;
     }

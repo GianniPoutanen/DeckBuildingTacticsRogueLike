@@ -9,6 +9,7 @@ public class UseEnergyAction : Ability
 
     public override void Perform()
     {
+        base.Perform();
         oldEnergyAmount = PlayerManager.Instance.CurrentEnergy;
         newEnergyAmount = PlayerManager.Instance.CurrentEnergy - amount;
         PlayerManager.Instance.CurrentEnergy = newEnergyAmount;

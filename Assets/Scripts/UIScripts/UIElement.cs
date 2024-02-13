@@ -10,15 +10,32 @@ public class UIElement : MonoBehaviour
     [SerializeField] public float targetSizeFactor = 1.0f; // Default target size factor is 1.
     [SerializeField] public float sizeFactor = 1.0f; // Default target size factor is 1.
     [SerializeField] public float growthSpeed = 1.0f; // Speed of the growth.
+    public Animator animator;
 
     public virtual void Start()
     {
-        
+        animator = GetComponent<Animator>();
     }
 
     public virtual void Update()
     {
         SetSize();
+    }
+
+    public virtual void Open()
+    {
+        if (animator != null)
+        {
+            animator.SetTrigger("Open");
+        }
+    }
+
+    public virtual void Close()
+    {
+        if (animator != null)
+        {
+            animator.SetTrigger("Close");
+        }
     }
 
     public void SetSize()

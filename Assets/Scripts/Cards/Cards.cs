@@ -21,6 +21,28 @@ public class Card : ScriptableObject
     public AbilityWrapper[] abilities;
     private Guid ID = Guid.NewGuid();
 
+    public Card(Card card)
+    {
+        this.cardName = card.cardName;
+        this.description = card.description;
+        this.cost = card.cost;
+        this.range = card.range;
+        this.castType = card.castType;
+
+        List<AbilityWrapper> cardAbilities = new List<AbilityWrapper>();
+        foreach (AbilityWrapper wrapper in card.abilities)
+        {
+            // Reconstruct Abilities
+            cardAbilities.Add(new AbilityWrapper(
+                AbilityBuilder.GetBuilder(wrapper.ability)
+                                .SetRange(card.range)
+                                .SetPerformer(PlayerManager.Instance.Player)
+                                .SetEntityMask(new List<string>() { "Enemy"})
+                                .Build()));
+        }
+        abilities = cardAbilities.ToArray();
+    }
+
     public virtual void Play()
     {
         UseEnergyAction useEnegy = new UseEnergyAction() { amount = cost };
@@ -35,7 +57,8 @@ public class Card : ScriptableObject
             GridEntity targetEntity = GridManager.Instance.GetEntityOnPosition(targetPosition);
             ability = builder.SetPerformer(PlayerManager.Instance.Player).SetTargetPosition(targetPosition).SetRange(range).Build();
             ability.Perform();
-;        }
+            ;
+        }
 
         PlayerManager.Instance.discardPile.AddCard(this);
         UndoRedoManager.Instance.AddUndoAction(new PlayCardAction(this));
@@ -170,43 +193,3 @@ public class Card : ScriptableObject
     }
 }
 
-public class SlashCard : Card
-{
-    public int damage = 2;
-
-    public override void Play()
-    {
-        base.Play();
-    }
-}
-
-
-public class AttackCard : Card
-{
-    public int damage;
-
-    public override void Play()
-    {
-        base.Play();
-    }
-}
-
-public class DefenseCard : Card
-{
-    public int armor;
-
-    public override void Play()
-    {
-        base.Play();
-    }
-}
-
-public class SkillCard : Card
-{
-    public string effect;
-
-    public override void Play()
-    {
-        base.Play();
-    }
-}

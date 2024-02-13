@@ -31,12 +31,12 @@ public class PlayerController : GridEntity
             {
                 if (CurrentActions.Count > 0)
                 {
-                    CurrentActions.Pop().Undo();
+                    CurrentActions.Pop();
+                    UndoRedoManager.Instance.Undo();
                 }
                 else
                 {
                     UndoRedoManager.Instance.UndoToPlayer();
-                    PlayerManager.Instance.CurrentEnergy = PlayerManager.Instance.maxEnergy;
                 }
             }
 
@@ -75,11 +75,11 @@ public class PlayerController : GridEntity
         // Check if the new target position is valid
         if (GridManager.Instance.IsFloorGridPositionEmpty(newTargetGridPosition))
         {
-            CompositeAction movePlayerAction = new CompositeAction()
+            CompositeAction movePlayerAction = (CompositeAction)AbilityBuilder.GetBuilder(new CompositeAction()
             {
-                actions = new List<Ability>(){new MoveSelfBuilder().SetPerformer(this).SetTargetPosition(newTargetGridPosition).Build(),
+                actions = new List<Ability>(){AbilityBuilder.GetBuilder(new MoveSelfAbility()).SetPerformer(this).SetTargetPosition(newTargetGridPosition).Build(),
                                               new UseEnergyAction() { Performer = this, amount = movementCost } }
-            };
+            }).SetPerformer(this).Build();
             CurrentActions.Push(movePlayerAction);
             movePlayerAction.Perform();
             EventManager.Instance.InvokeEvent(EventType.UpdateUI);

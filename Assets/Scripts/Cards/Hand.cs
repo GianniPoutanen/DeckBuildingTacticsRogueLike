@@ -16,6 +16,7 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     }
     private HandState state;
     public bool mouseInHand;
+    public int handSizeLimit = 4;
 
     [Header("Cards")]
     public GameObject cardPrefab;
@@ -25,7 +26,6 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     public RectTransform cardSpawnPosition;
     private Deck PlayerDeck { get { return PlayerManager.Instance.activeDeck; } }
     private Deck DiscardPile { get { return PlayerManager.Instance.discardPile; } }
-
 
     [Header("Cards Positioning Variables")]
     public Vector2 initialPosition = new Vector2(0f, 0f);
@@ -99,20 +99,27 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     // Example: Call this method to draw a card from the deck
     public void DrawCardToHand()
     {
-        if (PlayerDeck.Cards.Count > 0)
+        if (cardsInHand.Count < handSizeLimit)
         {
-            DrawCardFromPlayerDeck();
-        }
-        else if (DiscardPile.Cards.Count > 0)
-        {
-            PlayerDeck.AddCards(DiscardPile.Cards);
-            PlayerDeck.Shuffle();
-            DiscardPile.Cards.Clear();
-            DrawCardFromPlayerDeck();
+            if (PlayerDeck.Cards.Count > 0)
+            {
+                DrawCardFromPlayerDeck();
+            }
+            else if (DiscardPile.Cards.Count > 0)
+            {
+                PlayerDeck.AddCards(DiscardPile.Cards);
+                PlayerDeck.Shuffle();
+                DiscardPile.Cards.Clear();
+                DrawCardFromPlayerDeck();
+            }
+            else
+            {
+                Debug.Log("Failed to draw a card. Deck and discard pile are empty.");
+            }
         }
         else
         {
-            Debug.Log("Failed to draw a card. Deck and discard pile are empty.");
+            Debug.Log("Hand limit reached!");
         }
     }
 
