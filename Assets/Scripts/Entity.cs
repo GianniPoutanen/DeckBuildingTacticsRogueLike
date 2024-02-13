@@ -113,4 +113,89 @@ public abstract class Entity : MonoBehaviour
 
     public abstract void SubscribeToEvents();
     public abstract void UnsubscribeToEvents();
+
+    IEnumerator JabCoroutine(Vector3 jabDirection, float speed, float duration, float distance)
+    {
+        // Calculate the target rotation angle
+        float targetRotation = Mathf.Atan2(jabDirection.y, jabDirection.x) * Mathf.Rad2Deg;
+
+        // Smoothly rotate towards the target rotation
+        Quaternion startRotation = transform.rotation;
+        Quaternion targetRotationQuaternion = Quaternion.Euler(0, 0, targetRotation);
+
+        float elapsedTime = 0f;
+        while (elapsedTime < duration)
+        {
+            transform.rotation = Quaternion.Slerp(startRotation, targetRotationQuaternion, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Jab forward
+        float jabDistanceRemaining = distance;
+        while (jabDistanceRemaining > 0f)
+        {
+            transform.position += jabDirection * speed * Time.deltaTime;
+            jabDistanceRemaining -= speed * Time.deltaTime;
+            yield return null;
+        }
+
+        // Wait for a short duration
+        yield return new WaitForSeconds(0.1f);
+
+        // Return to original rotation
+        elapsedTime = 0f;
+        while (elapsedTime < duration)
+        {
+            transform.rotation = Quaternion.Slerp(targetRotationQuaternion, startRotation, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure the final rotation is exactly the original rotation
+        transform.rotation = startRotation;
+    }
+
+    
+    IEnumerator JabWithActionCoroutine(Ability ability, Vector3 jabDirection, float speed, float duration, float distance)
+    {
+        // Calculate the target rotation angle
+        float targetRotation = Mathf.Atan2(jabDirection.y, jabDirection.x) * Mathf.Rad2Deg;
+
+        // Smoothly rotate towards the target rotation
+        Quaternion startRotation = transform.rotation;
+        Quaternion targetRotationQuaternion = Quaternion.Euler(0, 0, targetRotation);
+
+        float elapsedTime = 0f;
+        while (elapsedTime < duration)
+        {
+            transform.rotation = Quaternion.Slerp(startRotation, targetRotationQuaternion, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Jab forward
+        float jabDistanceRemaining = distance;
+        while (jabDistanceRemaining > 0f)
+        {
+            transform.position += jabDirection * speed * Time.deltaTime;
+            jabDistanceRemaining -= speed * Time.deltaTime;
+            yield return null;
+        }
+
+        // Wait for a short duration
+        yield return new WaitForSeconds(0.1f);
+
+        // Return to original rotation
+        elapsedTime = 0f;
+        while (elapsedTime < duration)
+        {
+            transform.rotation = Quaternion.Slerp(targetRotationQuaternion, startRotation, elapsedTime / duration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+
+        // Ensure the final rotation is exactly the original rotation
+        transform.rotation = startRotation;
+    }
 }
