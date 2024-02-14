@@ -17,6 +17,10 @@ public class PlayerController : GridEntity
 
     public override void Update()
     {
+        // Skip Enery Button
+        if (Input.GetKeyDown(KeyCode.Tab))
+            (new UseEnergyAction() { amount = 1, Performer = this }).Perform();
+
         if (EventManager.Instance.EventsRunning)
         {
             return;

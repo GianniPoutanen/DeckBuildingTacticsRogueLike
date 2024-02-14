@@ -389,6 +389,7 @@ MonoBehaviour:
   abilities: []
   abilityDisplayPanelGameObject: {fileID: 4089941210979211814, guid: b5b0f0b32ed2fbd45a276e72c7020d66, type: 3}
   entries: []
+  attackNameLabel: {fileID: 3478143754170376114}
   content: {fileID: 8543768889751432329}
   spaceBetweenEntries: 4
 --- !u!1 &8909392347258937825
@@ -423,7 +424,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 455.49957, y: 0}
+  m_AnchoredPosition: {x: 874.9993, y: 0}
   m_SizeDelta: {x: 258.8, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &9201213777240326620

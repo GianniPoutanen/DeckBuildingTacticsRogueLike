@@ -69,3 +69,17 @@ public enum AbilityTypes
     SurroundingAttack,
     MoveTarget,
 }
+
+public enum TileMapType
+{
+    Floor,
+    CastPositions,
+    EnemyAttackPositions,
+    EnemyMovePositions
+}
+public enum TileType
+{
+    CastTile,
+    EnemyAttackTile,
+    EnemyMoveTile
+}

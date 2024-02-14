@@ -66,7 +66,6 @@ public class UndoRedoManager : MonoBehaviour
     {
         while (undoStack.Count > 0)
         {
-
             Ability action = undoStack.Pop() as Ability;
             if (action != null)
             {

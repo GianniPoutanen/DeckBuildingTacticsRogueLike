@@ -14,29 +14,29 @@ public class MoveTargetAbility : Ability
 
 	public override void Undo()
 	{
-		_performer.transform.position = oldPosition;
-		_performer.targetGridPosition = oldPosition;
+		Performer.transform.position = oldPosition;
+		Performer.targetGridPosition = oldPosition;
 	}
 
 	public override void Redo()
 	{
-		_performer.transform.position = newPosition;
-		_performer.targetGridPosition = newPosition;
+		Performer.transform.position = newPosition;
+		Performer.targetGridPosition = newPosition;
 	}
 
 	public override void Perform()
 	{
 		base.Perform();
-		Debug.Log("Moving " + _performer + " from " + oldPosition + " to " + newPosition);
-		oldPosition = _performer.targetGridPosition;
+		Debug.Log("Moving " + Performer + " from " + oldPosition + " to " + newPosition);
+		oldPosition = Performer.targetGridPosition;
 		target.targetGridPosition = TargetPosition * new Vector3Int(1, 1, 0);
 		newPosition = TargetPosition;
 	}
 
 	public override bool CanPerform(Vector3Int position)
 	{
-		return (_performer.targetGridPosition * new Vector3Int(1, 1, 0)).Equals(position) &&
-			_performer.CanMoveTo(position) && GridManager.Instance.FindPath(_performer.targetGridPosition, position).Count > distance + 2 && GridManager.Instance.GetEntityOnPosition(position) == null;
+		return (Performer.targetGridPosition * new Vector3Int(1, 1, 0)).Equals(position) &&
+			Performer.CanMoveTo(position) && GridManager.Instance.FindPath(Performer.targetGridPosition, position).Count > distance + 2 && GridManager.Instance.GetEntityOnPosition(position) == null;
 	}
 }
 

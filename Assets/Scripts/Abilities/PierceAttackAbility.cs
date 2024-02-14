@@ -27,7 +27,7 @@ public class PierceAttackAbility : Ability
         base.Perform();
         target = GridManager.Instance.GetEntityOnPosition(TargetPosition);
 
-        Debug.Log($"{_performer.name} attacks {target.name} for {damage} damage.");
+        Debug.Log($"{Performer.name} attacks {target.name} for {damage} damage.");
         beforeHealth = target.Health;
         target.PierceDamage(damage);
         afterHealth = target.Health;

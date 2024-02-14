@@ -44,16 +44,19 @@ public class GridManager : MonoBehaviour
     #endregion
 
     public Grid grid;
-    // Tile Maps
+    [Header(" Tile Maps")]
     public Tilemap floorTilemap;
     public Tilemap enemyAttackTilemap;
+    public Tilemap enemyMovementTilemap;
     public Tilemap castTilemap;
 
     // List of entities
+    [Header(" Entities on Grid")]
     public List<GridEntity> entities = new List<GridEntity>();
 
     [Header("Tiles")]
-    public Tile enemySelectionTile;
+    public Tile enemyAttackTile;
+    public Tile enemyMoveTile;
     public Tile castSelectionTile;
 
     private List<Vector3Int> selectedEnemyDangerPositions = new List<Vector3Int>();
@@ -81,12 +84,14 @@ public class GridManager : MonoBehaviour
     public void UpdateSelectedEnemyAttackTiles(List<Vector3Int> positions)
     {
         selectedEnemyDangerPositions = positions;
-        UpdateEnemyAttackTiles();
+        UpdateEnemyActionTiles();
     }
 
-    public void UpdateEnemyAttackTiles()
+
+    public void UpdateEnemyActionTiles()
     {
-        List<Vector3Int> selectedGridPositions = new List<Vector3Int>();
+        List<Vector3Int> selectedAttackGridPositions = new List<Vector3Int>();
+        List<Vector3Int> selectedMoveGridPositions = new List<Vector3Int>();
         foreach (Entity entity in entities)
         {
             if (entity is Enemy)
@@ -95,11 +100,11 @@ public class GridManager : MonoBehaviour
                 if (enemy.attackQueue.Count > 0)
                 {
                     AbilityBuilder.GetBuilder(enemy.attackQueue.Peek()).SetPerformer(enemy);
-                    selectedGridPositions.AddRange(enemy.attackQueue.Peek().GetAbilityPositions());
+                    selectedAttackGridPositions.AddRange(enemy.attackQueue.Peek().GetAbilityPositions());
                 }
             }
         }
-        foreach (var pos in selectedGridPositions)
+        foreach (var pos in selectedAttackGridPositions)
             Debug.Log(pos);
         BoundsInt bounds = floorTilemap.cellBounds;
         foreach (var position in bounds.allPositionsWithin)
@@ -110,10 +115,10 @@ public class GridManager : MonoBehaviour
             if (currentTile != null)
             {
                 // Check if the position matches the selected grid position
-                if (selectedGridPositions.Contains(position) || selectedEnemyDangerPositions.Contains(position))
+                if (selectedAttackGridPositions.Contains(position) || selectedEnemyDangerPositions.Contains(position))
                 {
                     // Set the tile to the selected tile
-                    enemyAttackTilemap.SetTile(position, enemySelectionTile);
+                    enemyAttackTilemap.SetTile(position, enemyAttackTile);
                 }
                 else
                 {
@@ -124,32 +129,6 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    // Update the tilemap to reflect the selected tiles
-    public void UpdateCastPositionsTilemap(List<Vector3Int> selectedGridPositions)
-    {
-        BoundsInt bounds = floorTilemap.cellBounds;
-
-        foreach (var position in bounds.allPositionsWithin)
-        {
-            TileBase currentTile = floorTilemap.GetTile(position);
-
-            // Selected tiles
-            if (currentTile != null)
-            {
-                // Check if the position matches the selected grid position
-                if (selectedGridPositions.Contains(position))
-                {
-                    // Set the tile to the selected tile
-                    castTilemap.SetTile(position, enemySelectionTile);
-                }
-                else
-                {
-                    // Set all other tiles to the unselected tile
-                    castTilemap.SetTile(position, null);
-                }
-            }
-        }
-    }
 
     #region A*
 
@@ -280,19 +259,19 @@ public class GridManager : MonoBehaviour
     public void AddQueuedAttackHandler(Ability ability)
     {
         enemyAbilitiesQueued.Add(ability);
-        UpdateEnemyAttackTiles();
+        UpdateEnemyActionTiles();
     }
 
     public void RemoveQueuedAttackHandler(Ability ability)
     {
         enemyAbilitiesQueued.Remove(ability);
-        UpdateEnemyAttackTiles();
+        UpdateEnemyActionTiles();
     }
 
     public void EndPlayerTurnHandler()
     {
         selectedEnemyDangerPositions.Clear();
-        UpdateEnemyAttackTiles();
+        UpdateEnemyActionTiles();
     }
 
     public void SubscribeToEvents()
@@ -316,6 +295,40 @@ public class GridManager : MonoBehaviour
     #endregion Event Handlers
 
     #region Helper functions
+
+    public void ClearAllSelectionTilemaps()
+    {
+        castTilemap.ClearAllTiles();
+        enemyAttackTilemap.ClearAllTiles();
+        enemyMovementTilemap.ClearAllTiles();
+    }
+
+    public void HighlightSelectedPositions(List<Vector3Int> positions, TileMapType mapType, TileType tileType)
+    {
+        Tilemap map = GetTilemap(mapType);
+        TileBase tile = GetTile(tileType);
+        BoundsInt bounds = floorTilemap.cellBounds;
+        foreach (var position in bounds.allPositionsWithin)
+        {
+            TileBase currentTile = floorTilemap.GetTile(position);
+
+            // Selected tiles
+            if (currentTile != null)
+            {
+                // Check if the position matches the selected grid position
+                if (positions.Contains(position))
+                {
+                    // Set the tile to the selected tile
+                    map.SetTile(position, tile);
+                }
+                else
+                {
+                    // Set all other tiles to the unselected tile
+                    map.SetTile(position, null);
+                }
+            }
+        }
+    }
 
     public static Vector3Int RoundToCardinal(Vector3 inputDirection)
     {
@@ -395,7 +408,7 @@ public class GridManager : MonoBehaviour
 
                 // Convert the entity's position to grid coordinates
                 Vector3Int entityGridPosition = GetGridPositionFromWorldPoint(entityPosition);
-                
+
                 // Check if the entity is at the given grid position
                 if (pos.Equals(entityGridPosition) && (entityMask == null || entityMask.Count == 0 || entityMask.Contains(entity.tag)))
                 {
@@ -485,7 +498,7 @@ public class GridManager : MonoBehaviour
     /// <param name="direction"></param>
     /// <param name="distance"></param>
     /// <returns></returns>
-    public List<Vector3Int> GetPositionsInDirection(Vector3Int startPos, Vector3Int direction, int distance)
+    public List<Vector3Int> GetPositionsInDirection(Vector3Int startPos, Vector3Int direction, int distance, int deadZoneRange = 0)
     {
         if (distance < 0)
         {
@@ -496,7 +509,7 @@ public class GridManager : MonoBehaviour
         // List to store the positions
         var positions = new List<Vector3Int>();
 
-        for (int i = 1; i <= distance; i++)
+        for (int i = 1 + deadZoneRange; i <= distance; i++)
         {
             Vector3Int newPos = startPos + direction * i;
             // Return if hit end
@@ -508,7 +521,6 @@ public class GridManager : MonoBehaviour
 
         return positions;
     }
-
 
     // Check if any entities inhabit a given grid position
     public bool HasEntitiesAtPosition(Vector3Int gridPosition, List<string> entityMask)
@@ -598,33 +610,6 @@ public class GridManager : MonoBehaviour
         return positionsInArea;
     }
 
-    public List<Vector3Int> GetPositionsInStraightLine(Vector3Int targetPosition, Vector2 direction, int distance)
-    {
-        List<Vector3Int> positionsInLine = new List<Vector3Int>();
-
-        // Ensure the direction is normalized
-        Vector2Int calculatedDirection = new Vector2Int(Mathf.RoundToInt(direction.normalized.x), Mathf.RoundToInt(direction.normalized.y));
-
-        // Iterate over the specified distance in both horizontal and vertical directions
-        for (int i = 1; i <= distance; i++)
-        {
-            // Horizontal movement
-            Vector3Int horizontalPosition = targetPosition + new Vector3Int(calculatedDirection.x * i, 0, 0);
-            positionsInLine.Add(horizontalPosition);
-
-            // Vertical movement
-            Vector3Int verticalPosition = targetPosition + new Vector3Int(0, calculatedDirection.y * i, 0);
-            positionsInLine.Add(verticalPosition);
-
-            // Diagonal movement
-            Vector3Int diagonalPosition = targetPosition + new Vector3Int(calculatedDirection.x * i, calculatedDirection.y * i, 0);
-            positionsInLine.Add(diagonalPosition);
-        }
-
-        return positionsInLine;
-    }
-
-
     public Vector3Int GetGridPositionFromWorldPoint(Vector3 worldPosition)
     {
         return new Vector3Int(
@@ -670,7 +655,34 @@ public class GridManager : MonoBehaviour
         return false;
     }
 
-
+    public Tilemap GetTilemap(TileMapType type)
+    {
+        switch (type)
+        {
+            case TileMapType.CastPositions:
+                return castTilemap;
+            case TileMapType.EnemyMovePositions:
+                return enemyMovementTilemap;
+            case TileMapType.EnemyAttackPositions:
+                return enemyAttackTilemap;
+            default:
+                return floorTilemap;
+        }
+    }
+    public TileBase GetTile(TileType type)
+    {
+        switch (type)
+        {
+            case TileType.CastTile:
+                return castSelectionTile;
+            case TileType.EnemyAttackTile:
+                return enemyAttackTile;
+            case TileType.EnemyMoveTile:
+                return enemyMoveTile;
+            default:
+                return castSelectionTile;
+        }
+    }
 
     #endregion Helper functions
 }

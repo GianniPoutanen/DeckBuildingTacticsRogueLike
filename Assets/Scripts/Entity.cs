@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -21,6 +22,14 @@ public abstract class Entity : MonoBehaviour
 
     [Header("Health Bar Location")]
     public Transform healthBarLocation;
+
+    [Header("Jab Variables")]
+    public float jabSpeed = 5f;
+    public float jabDistance = 2f;
+    private bool jabbing = false;
+
+    [Header("Look and Feel")]
+    public GameObject sprite;
 
     public virtual void Start()
     {
@@ -114,88 +123,36 @@ public abstract class Entity : MonoBehaviour
     public abstract void SubscribeToEvents();
     public abstract void UnsubscribeToEvents();
 
-    IEnumerator JabCoroutine(Vector3 jabDirection, float speed, float duration, float distance)
+    public IEnumerator JabCoroutine(Vector3 direction, float speed, float distance, Ability ability = null)
     {
-        // Calculate the target rotation angle
-        float targetRotation = Mathf.Atan2(jabDirection.y, jabDirection.x) * Mathf.Rad2Deg;
-
-        // Smoothly rotate towards the target rotation
-        Quaternion startRotation = transform.rotation;
-        Quaternion targetRotationQuaternion = Quaternion.Euler(0, 0, targetRotation);
-
-        float elapsedTime = 0f;
-        while (elapsedTime < duration)
+        if (!jabbing)
         {
-            transform.rotation = Quaternion.Slerp(startRotation, targetRotationQuaternion, elapsedTime / duration);
-            elapsedTime += Time.deltaTime;
-            yield return null;
+            jabbing = true;
+            Vector3 jabDirection = new Vector3(direction.x, direction.y);
+            Vector3 originalPosition = sprite.transform.localPosition;
+
+            // Jab forward
+            float jabDistanceRemaining = distance;
+            while (jabDistanceRemaining > 0f)
+            {
+                sprite.transform.localPosition += jabDirection * speed * Time.deltaTime;
+                jabDistanceRemaining -= speed * Time.deltaTime;
+                yield return null;
+            }
+
+            if (ability != null)
+                ability.Perform();
+            // Wait for a short duration
+            yield return new WaitForSeconds(0.01f);
+            // Move back to the original position
+            while (Vector3.Distance(sprite.transform.localPosition,originalPosition) > 0.1)
+            {
+                sprite.transform.localPosition = Vector3.Lerp(sprite.transform.localPosition, originalPosition, speed * Time.deltaTime);
+                yield return null;
+            }
+            // Ensure the final position is exactly the original position
+            sprite.transform.localPosition = originalPosition;
+            jabbing = false;
         }
-
-        // Jab forward
-        float jabDistanceRemaining = distance;
-        while (jabDistanceRemaining > 0f)
-        {
-            transform.position += jabDirection * speed * Time.deltaTime;
-            jabDistanceRemaining -= speed * Time.deltaTime;
-            yield return null;
-        }
-
-        // Wait for a short duration
-        yield return new WaitForSeconds(0.1f);
-
-        // Return to original rotation
-        elapsedTime = 0f;
-        while (elapsedTime < duration)
-        {
-            transform.rotation = Quaternion.Slerp(targetRotationQuaternion, startRotation, elapsedTime / duration);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        // Ensure the final rotation is exactly the original rotation
-        transform.rotation = startRotation;
-    }
-
-    
-    IEnumerator JabWithActionCoroutine(Ability ability, Vector3 jabDirection, float speed, float duration, float distance)
-    {
-        // Calculate the target rotation angle
-        float targetRotation = Mathf.Atan2(jabDirection.y, jabDirection.x) * Mathf.Rad2Deg;
-
-        // Smoothly rotate towards the target rotation
-        Quaternion startRotation = transform.rotation;
-        Quaternion targetRotationQuaternion = Quaternion.Euler(0, 0, targetRotation);
-
-        float elapsedTime = 0f;
-        while (elapsedTime < duration)
-        {
-            transform.rotation = Quaternion.Slerp(startRotation, targetRotationQuaternion, elapsedTime / duration);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        // Jab forward
-        float jabDistanceRemaining = distance;
-        while (jabDistanceRemaining > 0f)
-        {
-            transform.position += jabDirection * speed * Time.deltaTime;
-            jabDistanceRemaining -= speed * Time.deltaTime;
-            yield return null;
-        }
-
-        // Wait for a short duration
-        yield return new WaitForSeconds(0.1f);
-
-        // Return to original rotation
-        elapsedTime = 0f;
-        while (elapsedTime < duration)
-        {
-            transform.rotation = Quaternion.Slerp(targetRotationQuaternion, startRotation, elapsedTime / duration);
-            elapsedTime += Time.deltaTime;
-            yield return null;
-        }
-
-        // Ensure the final rotation is exactly the original rotation
-        transform.rotation = startRotation;
     }
 }

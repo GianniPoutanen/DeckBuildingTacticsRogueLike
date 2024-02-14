@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 13312, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: Selection_Squares_1
+  m_Name: EnemySelectionTile
   m_EditorClassIdentifier: 
-  m_Sprite: {fileID: -353509477, guid: 3f7904a694dbbc54f9964fcaae16ba42, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Sprite: {fileID: -1269042225, guid: 3f7904a694dbbc54f9964fcaae16ba42, type: 3}
+  m_Color: {r: 0.64705884, g: 0.18823531, b: 0.18823531, a: 1}
   m_Transform:
     e00: 1
     e01: 0

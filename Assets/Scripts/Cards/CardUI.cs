@@ -77,7 +77,7 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
         dragging = false;
         EventManager.Instance.InvokeEvent(EventType.CardEndDragging, this);
         castSelectionLocation.Clear();
-        GridManager.Instance.UpdateCastPositionsTilemap(castSelectionLocation);
+        GridManager.Instance.ClearAllSelectionTilemaps();
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -87,18 +87,21 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
 
     private void HighlightCardCastLocations()
     {
-        if (card != null && card.abilities.Length > 0 && card.range > 0 ? card.CanPlay(GridManager.Instance.GetGridPositionFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition))) : card.CanPlay(PlayerManager.Instance.Player.targetGridPosition))
+        Vector3Int mouseGridPos = GridManager.Instance.GetGridPositionFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+        if (card != null && card.abilities.Length > 0 && card.range > 0 ? card.CanPlay(mouseGridPos) : card.CanPlay(PlayerManager.Instance.Player.targetGridPosition))
         {
             castSelectionLocation.Clear();
 
             foreach (AbilityWrapper wrapper in card.abilities)
-                castSelectionLocation.AddRange(wrapper.ability.GetAbilityPositions());
-            GridManager.Instance.UpdateCastPositionsTilemap(castSelectionLocation);
+            {
+                castSelectionLocation.AddRange(AbilityBuilder.GetBuilder(wrapper.ability).SetTargetPosition(mouseGridPos).Build().GetAbilityPositions());
+            }
+            GridManager.Instance.HighlightSelectedPositions(castSelectionLocation, TileMapType.CastPositions, TileType.CastTile);
         }
         else
         {
             castSelectionLocation.Clear();
-            GridManager.Instance.UpdateCastPositionsTilemap(castSelectionLocation);
+            GridManager.Instance.ClearAllSelectionTilemaps();
         }
     }
 

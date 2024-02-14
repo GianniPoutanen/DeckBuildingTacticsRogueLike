@@ -58,6 +58,8 @@ public class AbilityDisplayPanel : MonoBehaviour, IPointerDownHandler
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        GridManager.Instance.UpdateSelectedEnemyAttackTiles(abilityOnCard.GetPossiblePositions(abilityOnCard.Performer.targetGridPosition));
+        GridManager.Instance.ClearAllSelectionTilemaps();
+        abilityOnCard.HighlightPossiblePositions();
+        //GridManager.Instance.UpdateSelectedEnemyAttackTiles(abilityOnCard.GetPossiblePositions(abilityOnCard.Performer.targetGridPosition));
     }
 }

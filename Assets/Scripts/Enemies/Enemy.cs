@@ -17,7 +17,8 @@ public class Enemy : GridEntity
     [SerializeField]
     public Queue<Ability> attackQueue = new Queue<Ability>();
     public int damage = 3;
-
+    [SerializeField]
+    public Ability[] AttacksInQueue;
     [SerializeField]
     public List<Attack> possibleAttacks = new List<Attack>();
     protected PlayerController Player
@@ -33,14 +34,16 @@ public class Enemy : GridEntity
             SetUpAttack(attack);
 
     }
+
+    public override void Update()
+    {
+        base.Update();
+        AttacksInQueue = attackQueue.ToArray();
+    }
+
     public override void OnDestroy()
     {
         base.OnDestroy();
-        if (attackQueue.Count > 0)
-        {
-            Ability ability = attackQueue.Dequeue();
-            EventManager.Instance.InvokeEvent(EventType.AttackDequeued, ability);
-        }
     }
 
     void OnMouseDown()
@@ -56,9 +59,8 @@ public class Enemy : GridEntity
         if (attackQueue.Count > 0)
         {
             // Move towards player default
-            Ability ability = attackQueue.Dequeue();
-            ability.Perform();
-            GridManager.Instance.UpdateEnemyAttackTiles();
+            yield return PerformJabWithAttackInQueue();
+            GridManager.Instance.UpdateEnemyActionTiles();
         }
         else
         {
@@ -68,6 +70,10 @@ public class Enemy : GridEntity
             {
                 // Move towards player default
                 PerformMoveAction();
+            }
+            else
+            {
+                yield return StartCoroutine(PerformJabWithAttackInQueue());
             }
         }
 
@@ -86,12 +92,8 @@ public class Enemy : GridEntity
         if (attacks.Count > 0)
         {
             int index = Random.Range(0, attacks.Count);
-            AbilityBuilder abilityBuilder = AbilityBuilder.GetBuilder(attacks[index].triggerAbility);
-            (abilityBuilder.SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build()).Perform();
-            foreach (Ability ability in attacks[index].followUpAbilities)
-                attackQueue.Enqueue(AbilityBuilder.GetBuilder(ability).SetPerformer(this).SetTargetPosition(Player.targetGridPosition).Build());
+            (new EnqueuAttackAction(this,attacks[index])).Perform();
         }
-        GridManager.Instance.UpdateEnemyAttackTiles();
     }
 
     public virtual void PerformMoveAction()
@@ -100,6 +102,14 @@ public class Enemy : GridEntity
         FindPathToPlayer();
         if (currentPath.Count > 0 && !GridManager.Instance.HasEntitiesAtPosition(currentPath.First()))
             StepTowardsGridPosition(currentPath.First());
+    }
+
+    public virtual IEnumerator PerformJabWithAttackInQueue()
+    {
+        Vector3 jabDirection = attackQueue.Peek().TargetPosition + new Vector3(0.5f, 0.5f) - sprite.transform.position;
+        jabDirection = (new Vector3(jabDirection.x, jabDirection.y, 0)).normalized;
+        yield return StartCoroutine(JabCoroutine(jabDirection, jabSpeed, jabDistance, attackQueue.Dequeue()));
+        GridManager.Instance.UpdateEnemyActionTiles();
     }
 
     public void StepTowardsGridPosition(Vector3Int nextGridPosition)

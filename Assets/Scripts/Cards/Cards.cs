@@ -64,34 +64,6 @@ public class Card : ScriptableObject
         UndoRedoManager.Instance.AddUndoAction(new PlayCardAction(this));
     }
 
-    public void Cast(Vector3Int targetPosition)
-    {
-        switch (castType)
-        {
-            case CastType.Simple:
-                SimpleCast(targetPosition);
-                break;
-
-            case CastType.WithinDistance:
-                WithinDistanceCast(targetPosition);
-                break;
-
-            case CastType.Cone:
-                ConeCast(targetPosition);
-                break;
-
-            case CastType.Area:
-                AreaCast(targetPosition);
-                break;
-
-            // Add more cases for other cast types...
-
-            default:
-                Debug.LogError("Invalid cast type");
-                break;
-        }
-    }
-
     private void CastOnEntitiesAtTargetPosition(Vector3Int position, List<Entity> entities)
     {
         foreach (AbilityWrapper wrapper in abilities)
@@ -120,6 +92,8 @@ public class Card : ScriptableObject
         }
     }
 
+    // TODO
+    /*
     private void WithinDistanceCast(Vector3Int targetPosition)
     {
         // Implement logic for casting within a given distance of the target position
@@ -158,7 +132,7 @@ public class Card : ScriptableObject
 
         Debug.Log($"Area cast at positions: {string.Join(", ", positionsInArea)}");
     }
-
+    */
     #endregion Cast Types
     public virtual bool CanPlay(Vector3Int position)
     {

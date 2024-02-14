@@ -30,12 +30,12 @@ public class DrainAttackAbility : Ability
         base.Perform();
         target = GridManager.Instance.GetEntityOnPosition(TargetPosition);
 
-        Debug.Log($"{_performer.name} attacks {target.name} for {damage} damage.");
+        Debug.Log($"{Performer.name} attacks {target.name} for {damage} damage.");
         beforeHealth = target.Health;
         beforeArmour = target.Armour;
         int drainAmount = damage - target.Armour;
         target.Damage(damage);
-        _performer.Heal(drainAmount > 0 ? drainAmount : 0);
+        Performer.Heal(drainAmount > 0 ? drainAmount : 0);
         afterHealth = target.Health;
         afterArmour = target.Armour;
     }

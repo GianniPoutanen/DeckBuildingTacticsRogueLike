@@ -25,10 +25,10 @@ public class MoveSelfAbility : Ability
 
     public override void Undo()
     {
-        _performer.transform.position = oldPosition;
-        _performer.targetGridPosition = oldPosition;
+        Performer.transform.position = oldPosition;
+        Performer.targetGridPosition = oldPosition;
 
-        if (_performer == PlayerManager.Instance.Player)
+        if (Performer == PlayerManager.Instance.Player)
         {
             PlayerManager.Instance.numMovement = prevPlayerNumMovement;
 
@@ -39,10 +39,10 @@ public class MoveSelfAbility : Ability
 
     public override void Redo()
     {
-        _performer.transform.position = newPosition;
-        _performer.targetGridPosition = newPosition;
+        Performer.transform.position = newPosition;
+        Performer.targetGridPosition = newPosition;
 
-        if (_performer == PlayerManager.Instance.Player)
+        if (Performer == PlayerManager.Instance.Player)
         {
             PlayerManager.Instance.numMovement = newPlayerNumMovement;
 
@@ -55,18 +55,18 @@ public class MoveSelfAbility : Ability
     public override void Perform()
     {
         base.Perform();
-        Debug.Log("Moving " + _performer + " from " + oldPosition + " to " + newPosition);
-        oldPosition = _performer.targetGridPosition;
+        Debug.Log("Moving " + Performer + " from " + oldPosition + " to " + newPosition);
+        oldPosition = Performer.targetGridPosition;
 
-        if (_performer == PlayerManager.Instance.Player)
+        if (Performer == PlayerManager.Instance.Player)
         {
             prevPlayerNumMovement = PlayerManager.Instance.numMovement;
         }
 
-        _performer.targetGridPosition = TargetPosition * new Vector3Int(1, 1, 0);
+        Performer.targetGridPosition = TargetPosition * new Vector3Int(1, 1, 0);
         newPosition = TargetPosition;
 
-        if (_performer == PlayerManager.Instance.Player)
+        if (Performer == PlayerManager.Instance.Player)
         {
             newPlayerNumMovement = PlayerManager.Instance.numMovement;
         }
@@ -77,8 +77,8 @@ public class MoveSelfAbility : Ability
     {
         if (GridManager.Instance.GetEntityOnPosition(position) != null)
             return false;
-        int travelPathCount = GridManager.Instance.FindPath(_performer.targetGridPosition, position).Count;
-        return _performer.CanMoveTo(position) && travelPathCount != 0 && travelPathCount <= range;
+        int travelPathCount = GridManager.Instance.FindPath(Performer.targetGridPosition, position).Count;
+        return Performer.CanMoveTo(position) && travelPathCount != 0 && travelPathCount <= range;
     }
 
     public Ability Build()

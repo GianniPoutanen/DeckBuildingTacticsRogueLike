@@ -33,6 +33,7 @@ public class SimpleAttackAbility : Ability
 
     public override void Undo()
     {
+        base.Undo();
         var target = GridManager.Instance.GetEntityOnPosition(TargetPosition, entityMask);
         Debug.Log($"Undoing attack on {target.name}.");
         if (target != null)
@@ -41,6 +42,7 @@ public class SimpleAttackAbility : Ability
 
     public override void Redo()
     {
+        base.Redo();
         var target = GridManager.Instance.GetEntityOnPosition(TargetPosition, entityMask);
         Debug.Log($"Redoing attack on {target.name}.");
         if (target != null)
@@ -52,7 +54,7 @@ public class SimpleAttackAbility : Ability
         base.Perform();
         if (target != null)
         {
-            Debug.Log($"{_performer.name} attacks {target.name} for {damage} damage.");
+            Debug.Log($"{Performer.name} attacks {target.name} for {damage} damage.");
             beforeArmour = target.Armour;
             beforeHealth = target.Health;
             target.Damage(damage);
@@ -65,7 +67,7 @@ public class SimpleAttackAbility : Ability
     public override bool CanPerform(Vector3Int position)
     {
         var target = GridManager.Instance.GetEntityOnPosition(position, entityMask);
-        return target != null && target != _performer && (global || GridManager.Instance.GetWalkingDistance(_performer.targetGridPosition, position) <= range);
+        return target != null && target != Performer && (global || GridManager.Instance.GetWalkingDistance(Performer.targetGridPosition, position) <= range);
     }
 
     public override List<Vector3Int> GetAbilityPositions()

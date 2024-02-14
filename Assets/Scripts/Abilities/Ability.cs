@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public abstract class Ability : ScriptableObject, IUndoRedoAction
 {
     [HideInInspector]
-    public GridEntity _performer = null;
+    private GridEntity _performer = null;
     [HideInInspector]
     public GridEntity Performer { get { return _performer; } set { _performer = value; } }
     public Vector3Int TargetPosition { get; set; }
@@ -25,12 +26,26 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
 
     public virtual void Redo()
     {
-        throw new NotImplementedException();
+        if (this.Performer is Enemy)
+        {
+            (this.Performer as Enemy).attackQueue.Dequeue();
+            GridManager.Instance.UpdateEnemyActionTiles();
+        }
     }
 
     public virtual void Undo()
     {
-        throw new NotImplementedException();
+        if (this.Performer is Enemy)
+        {
+            Queue<Ability> newQueue = new Queue<Ability>();
+            newQueue.Enqueue(this);
+            foreach (Ability ability in (this.Performer as Enemy).attackQueue)
+            {
+                newQueue.Enqueue(ability);
+            }
+            (this.Performer as Enemy).attackQueue = newQueue;
+            GridManager.Instance.UpdateEnemyActionTiles();
+        }
     }
 
     public virtual void Perform()
@@ -54,7 +69,7 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
         return new List<Vector3Int>();
     }
 
-    public List<Vector3Int> GetPossiblePositions()
+    public virtual List<Vector3Int> GetPossiblePositions()
     {
         return GetPossiblePositions(TargetPosition);
     }
@@ -66,6 +81,10 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
     public virtual void HighlightSelectedPositions()
     {
 
+    }
+    public virtual void HighlightPossiblePositions()
+    {
+        GridManager.Instance.HighlightSelectedPositions(GetPossiblePositions(), TileMapType.EnemyAttackPositions, TileType.EnemyAttackTile);
     }
 }
 
@@ -133,13 +152,17 @@ public abstract class AbilityBuilder : IAbilityBuilder
     {
         return this;
     }
+    public virtual AbilityBuilder SetDeadRange(int range)
+    {
+        return this;
+    }
 
     public static AbilityBuilder GetBuilder(Ability ability)
     {
         switch (ability)
         {
             case DestroyEntityAbility:
-                return new DestroyEntityBuilder((DestroyEntityAbility) ability);
+                return new DestroyEntityBuilder((DestroyEntityAbility)ability);
             case MoveSelfAbility:
                 return new MoveSelfBuilder(new MoveSelfAbility((MoveSelfAbility)ability));
             case MoveTargetAbility:
@@ -150,6 +173,8 @@ public abstract class AbilityBuilder : IAbilityBuilder
                 return new StraightAttackBuilder((StraightAttackAbility)ability);
             case CompositeAction:
                 return new CompositeAbilityBuilder((CompositeAction)ability);
+            case StepAwayAbility:
+                return new StepAwayBuilder((StepAwayAbility)ability);
         }
         return null;
     }

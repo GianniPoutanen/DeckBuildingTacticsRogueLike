@@ -39,6 +39,10 @@ public class AbilityPanelEntry : MonoBehaviour
                 TextMesh.text = (ability as MoveTargetAbility).distance.ToString();
                 SetImages(MovementAbility);
                 break;
+            case StepAwayAbility:
+                TextMesh.text = (ability as StepAwayAbility).jumpDistance.ToString();
+                SetImages(MovementAbility);
+                break;
         }
     }
 

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class AttacksPanelEntry : MonoBehaviour
@@ -10,6 +11,7 @@ public class AttacksPanelEntry : MonoBehaviour
     [Header("UI Eements")]
     public AbilityDisplayPanel abilityDisplayPanelGameObject;
     public List<AbilityDisplayPanel> entries = new List<AbilityDisplayPanel>();
+    public TextMeshProUGUI attackNameLabel;
     public RectTransform content;
     [Header("Spacing")]
     public float spaceBetweenEntries;
@@ -38,6 +40,7 @@ public class AttacksPanelEntry : MonoBehaviour
 
         content.sizeDelta = new Vector2(abilityDisplayPanelGameObject.GetComponent<RectTransform>().sizeDelta.x * abilities.Count + (spaceBetweenEntries * abilities.Count), 0);
         OrderEntries();
+        attackNameLabel.text = attack.attackName;
     }
 
     public void OrderEntries()
