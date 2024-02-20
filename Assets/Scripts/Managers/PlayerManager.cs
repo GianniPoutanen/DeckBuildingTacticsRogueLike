@@ -176,7 +176,7 @@ public class PlayerManager : MonoBehaviour
 
     public void EndEnemyTurnHandler()
     {
-        CurrentEnergy = maxEnergy + Player.Statuses[Status.Hasten];
+        CurrentEnergy = maxEnergy + Player.GetStatus(Status.Hasten);
         EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 

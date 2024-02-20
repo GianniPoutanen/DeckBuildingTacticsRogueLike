@@ -24,14 +24,14 @@ public class HandleStatusAction : Ability
                 break;
             case Status.Stunned:
                 Performer.Stunned = false;
-                Performer.Statuses[status]--;
+                Performer.GiveStatus(status, 1);
                 break;
             case Status.Rooted:
                 Performer.Rooted = false;
-                Performer.Statuses[status]--;
+                Performer.GiveStatus(status, 1);
                 break;
             default:
-                Performer.Statuses[status]++;
+                Performer.GiveStatus(status, 1);
                 break;
         }
     }
@@ -48,23 +48,23 @@ public class HandleStatusAction : Ability
         switch (status)
         {
             case Status.Poison:
-                Performer.PierceDamage(Performer.Statuses[Status.Poison]);
-                Performer.Statuses[status]--;
+                Performer.PierceDamage(Performer.GetStatus(Status.Poison));
+                Performer.GiveStatus(status, -1);
                 break;
             case Status.Regeneration:
-                Performer.Heal(Performer.Statuses[Status.Regeneration]);
-                Performer.Statuses[status]--;
+                Performer.Heal(Performer.GetStatus(Status.Regeneration));
+                Performer.GiveStatus(status, -1);
                 break;
             case Status.Stunned:
                 Performer.Stunned = true;
-                Performer.Statuses[status]--;
+                Performer.GiveStatus(status, -1);
                 break;
             case Status.Rooted:
                 Performer.Rooted = true;
-                Performer.Statuses[status]--;
+                Performer.GiveStatus(status, -1);
                 break;
             default:
-                Performer.Statuses[status]--;
+                Performer.GiveStatus(status, -1);
                 break;
         }
         afterArmour = Performer.Armour;

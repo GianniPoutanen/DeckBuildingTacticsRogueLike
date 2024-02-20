@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: BackStep
   m_EditorClassIdentifier: 
   entityMask: []
+  cost: 0
   triggerRange: 1
   jumpDistance: 1
   forceStep: 1
