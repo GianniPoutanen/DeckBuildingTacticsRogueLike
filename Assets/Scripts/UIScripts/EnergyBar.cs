@@ -24,7 +24,7 @@ public class EnergyBar : MonoBehaviour
 
     public void UpdateEnergyBar()
     {
-        int maxEnergy = PlayerManager.Instance.maxEnergy;
+        int maxEnergy = PlayerManager.Instance.maxEnergy + PlayerManager.Instance.Player.Statuses[Status.Hasten];
         int currentEnergy = PlayerManager.Instance.CurrentEnergy;
         barSegments.Clear();
 

@@ -1,6 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Timeline;
 
 public abstract class Entity : MonoBehaviour
 {
@@ -20,9 +23,11 @@ public abstract class Entity : MonoBehaviour
     [SerializeField]
     public virtual int Health { get { return CurrentHeatlh; } set { CurrentHeatlh = value; } }
 
-    [Header("Poison")]
-    public bool CanPosion = false;
-    public int PoisonAmount = 0;
+    [Header("Statuses")]
+    public Status[] DissabledStatuses = new Status[0];
+    public bool Stunned;
+    public bool Rooted;
+    public Dictionary<Status, int> Statuses = new Dictionary<Status, int>();
 
     [Header("Health Bar Location")]
     public Transform healthBarLocation;
@@ -40,6 +45,8 @@ public abstract class Entity : MonoBehaviour
         EventManager.Instance.InvokeEvent<Entity>(EventType.EntitySpawned, this);
         SubscribeToEvents();
         Health = MaxHealth;
+
+
     }
 
     public virtual void OnDestroy()
@@ -50,8 +57,40 @@ public abstract class Entity : MonoBehaviour
 
     public virtual void TurnStart()
     {
-        PierceDamage(PoisonAmount);
-        PoisonAmount--;
+        UIManager.Instance.UpdateUI();
+    }
+
+    public virtual int GetStatus(Status status)
+    {
+        if (!Statuses.ContainsKey(status))
+            Statuses.Add(status, 0);
+        return Statuses[status];
+    }
+
+    public virtual void GiveStatus(Status status, int amount)
+    {
+        if (!DissabledStatuses.Contains(status))
+        {
+            if (!Statuses.ContainsKey(status))
+                Statuses.Add(status, 0);
+
+            Statuses[status] += amount;
+            switch (status)
+            {
+                case Status.Hasten:
+                    if (this is PlayerController)
+                    {
+                        PlayerManager.Instance.CurrentEnergy += amount;
+                        UIManager.Instance.UpdateUI();
+                    }
+                    else
+                    {
+
+                    }
+                    //TODO increase energy
+                    break;
+            }
+        }
     }
 
     public virtual void Destroy()
@@ -80,17 +119,18 @@ public abstract class Entity : MonoBehaviour
 
     public virtual void Damage(int amount)
     {
-        int leftOver = amount;
+        int totalAmount = ((amount * Statuses[Status.Weaken] > 0 ? 2 : 1) - Statuses[Status.Shielded]) * Statuses[Status.Marked] > 0 ? 3 : 1;
+        int leftOver = totalAmount;
         if (Armour > 0)
         {
-            if (Armour - amount <= 0)
+            if (Armour - totalAmount <= 0)
             {
-                leftOver = amount - Armour;
+                leftOver = totalAmount - Armour;
                 Armour = 0;
             }
             else
             {
-                Armour -= amount;
+                Armour -= totalAmount;
             }
         }
         if (Armour == 0)
@@ -100,8 +140,13 @@ public abstract class Entity : MonoBehaviour
             else
                 Health -= leftOver;
         }
+        // Hacky way of getting rid of marked but allowing undo
+        if (Statuses[Status.Marked] > 0 && this is GridEntity)
+            UndoRedoManager.Instance.AddUndoAction(new GiveStatusAbility() { Performer = (GridEntity)this, amount = -1, status = Status.Marked });
+
         DeathCheck();
     }
+
     public virtual void PierceDamage(int amount)
     {
         if (Health - amount <= 0)
@@ -151,7 +196,7 @@ public abstract class Entity : MonoBehaviour
             // Wait for a short duration
             yield return new WaitForSeconds(0.01f);
             // Move back to the original position
-            while (Vector3.Distance(sprite.transform.localPosition,originalPosition) > 0.1)
+            while (Vector3.Distance(sprite.transform.localPosition, originalPosition) > 0.1)
             {
                 sprite.transform.localPosition = Vector3.Lerp(sprite.transform.localPosition, originalPosition, speed * Time.deltaTime);
                 yield return null;

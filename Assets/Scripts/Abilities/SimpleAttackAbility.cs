@@ -10,16 +10,21 @@ using UnityEngine.UIElements;
 public class SimpleAttackAbility : Ability
 {
     [HideInInspector]
+    private int beforePerformerHealth;
+    private int afterPerformerHealth;
     private int beforeHealth;
     private int afterHealth;
     private int beforeArmour;
     private int afterArmour;
     public int damage;
     [HideInInspector]
-    public bool global;
+    public bool global { get { return range == 0; } }
+    [Tooltip("If 0 then ability effect will be global")]
     public int range;
+    public bool pierce = false;
+    public bool drain = false;
 
-    public SimpleAttackAbility() 
+    public SimpleAttackAbility()
     {
 
     }
@@ -27,7 +32,6 @@ public class SimpleAttackAbility : Ability
     public SimpleAttackAbility(SimpleAttackAbility ability) : base(ability)
     {
         range = ability.range;
-        global = ability.global;
         damage = ability.damage;
     }
 
@@ -38,6 +42,9 @@ public class SimpleAttackAbility : Ability
         Debug.Log($"Undoing attack on {target.name}.");
         if (target != null)
             target.Health = beforeHealth;
+
+        if (drain)
+            Performer.CurrentHeatlh = beforePerformerHealth;
     }
 
     public override void Redo()
@@ -47,17 +54,31 @@ public class SimpleAttackAbility : Ability
         Debug.Log($"Redoing attack on {target.name}.");
         if (target != null)
             target.Health = afterHealth;
+        if (drain)
+            Performer.CurrentHeatlh = afterPerformerHealth;
     }
     public override void Perform()
     {
         var target = GridManager.Instance.GetEntityOnPosition(TargetPosition, entityMask);
         base.Perform();
+
         if (target != null)
         {
             Debug.Log($"{Performer.name} attacks {target.name} for {damage} damage.");
             beforeArmour = target.Armour;
             beforeHealth = target.Health;
-            target.Damage(damage);
+            if (pierce)
+                target.PierceDamage(damage + Performer.Statuses[Status.Strength]);
+            else
+                target.Damage(damage + Performer.Statuses[Status.Strength]);
+
+            if (drain)
+            {
+                beforePerformerHealth = Performer.Health;
+                Performer.Heal(beforeHealth - target.Health);
+                afterPerformerHealth = Performer.Health;
+            }
+
             afterArmour = target.Armour;
             afterHealth = target.Health;
             UIManager.Instance.UpdateUI();
@@ -127,7 +148,6 @@ public class SimpleAttackBuilder : AbilityBuilder
     public override AbilityBuilder SetRange(int range)
     {
         attackAbility.range = range;
-        attackAbility.global = false;
         return this;
     }
 }

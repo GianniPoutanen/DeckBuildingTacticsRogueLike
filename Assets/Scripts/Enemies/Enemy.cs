@@ -57,31 +57,58 @@ public class Enemy : GridEntity
     }
     public virtual IEnumerator DoTurn()
     {
-        for (currentEnergy = 0; currentEnergy < maxEnergy;)
+        if (!Stunned)
         {
-            yield return new WaitForSeconds(0.1f);
-            if (attackQueue.Count > 0)
+            // Do Turn
+            for (currentEnergy = 0; currentEnergy < maxEnergy;)
             {
-                // Move towards player default
-                yield return PerformJabWithAttackInQueue();
-                GridManager.Instance.UpdateEnemyActionTiles();
-            }
-            else
-            {
-                TryQueueAttack();
+                yield return new WaitForSeconds(0.1f);
+                TurnStart();
 
-                if (attackQueue.Count == 0)
+                if (attackQueue.Count > 0)
                 {
                     // Move towards player default
-                    yield return StartCoroutine(PerformMoveAction());
+                    yield return PerformJabWithAttackInQueue();
+                    GridManager.Instance.UpdateEnemyActionTiles();
                 }
                 else
                 {
-                    yield return StartCoroutine(PerformJabWithAttackInQueue());
+                    TryQueueAttack();
+
+                    if (attackQueue.Count == 0)
+                    {
+                        // Move towards player default
+                        yield return StartCoroutine(PerformMoveAction());
+                    }
+                    else
+                    {
+                        yield return StartCoroutine(PerformJabWithAttackInQueue());
+                    }
+                }
+            }
+            yield return new WaitForSeconds(0.1f);
+            if (attackQueue.Count > 0)
+            {
+                yield return StartCoroutine(PerformJabWithAttackInQueue());
+            }
+            else // Try Move
+            {
+                if (!Rooted)
+                {
+                    // Move towards player default
+                    PerformMoveAction();
+                }
+                else
+                {
+                    Rooted = false;
                 }
             }
         }
-        yield return new WaitForSeconds(0.1f);
+        else
+        {
+            Stunned = false;
+        }
+
         yield return null;
     }
 
@@ -151,7 +178,7 @@ public class Enemy : GridEntity
     {
         Vector3Int startCell = GridManager.Instance.GetGridPositionFromWorldPoint(this.targetGridPosition);
         Vector3Int targetCell = GridManager.Instance.GetClosestEmptyNeighbour(this.targetGridPosition, PlayerManager.Instance.Player.targetGridPosition);
-        currentPath = GridManager.Instance.FindPath(startCell, targetCell, new List<string>() { "Player"} );
+        currentPath = GridManager.Instance.FindPath(startCell, targetCell, new List<string>() { "Player" });
         string path = "";
         foreach (var p in currentPath)
             path += p + " ";

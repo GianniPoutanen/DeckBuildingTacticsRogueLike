@@ -9,6 +9,7 @@ public class MoveTargetAbility : Ability
 	private Vector3Int newPosition;
     [HideInInspector]
     public GridEntity target;
+	public Vector3Int movement;
 	public int distance;
 
 
