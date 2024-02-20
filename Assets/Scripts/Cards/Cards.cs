@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -11,8 +12,8 @@ public class Card : ScriptableObject
     [Header("Card Details")]
     public string cardName = "Card";
     public string description;
+    public int Cost { get { return abilities.Sum(x => x.ability.cost );  } }
     [Space(5)]
-    public int cost;
     public int range;
     public CastType castType;
 
@@ -25,7 +26,6 @@ public class Card : ScriptableObject
     {
         this.cardName = card.cardName;
         this.description = card.description;
-        this.cost = card.cost;
         this.range = card.range;
         this.castType = card.castType;
 
@@ -45,9 +45,6 @@ public class Card : ScriptableObject
 
     public virtual void Play()
     {
-        UseEnergyAction useEnegy = new UseEnergyAction() { amount = cost };
-        useEnegy.Perform();
-
         Vector3Int targetPosition = GridManager.Instance.GetGridPositionFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
         foreach (AbilityWrapper wrapper in abilities)
@@ -138,7 +135,7 @@ public class Card : ScriptableObject
     {
         bool result = true;
 
-        if (PlayerManager.Instance.CurrentEnergy - cost < 0)
+        if (PlayerManager.Instance.CurrentEnergy - Cost < 0)
             return false;
 
         if (GridManager.Instance.GetWalkingDistance(PlayerManager.Instance.Player.targetGridPosition, position) > range)

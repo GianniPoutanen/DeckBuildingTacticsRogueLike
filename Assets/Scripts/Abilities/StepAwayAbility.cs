@@ -50,7 +50,7 @@ public class StepAwayAbility : Ability
         Vector3Int furthestStep = Performer.targetGridPosition;
         foreach (var possibleStep in possibleStepPositions)
         {
-            if (Vector3Int.Distance(Performer.targetGridPosition, possibleStep) > Vector3Int.Distance(Performer.targetGridPosition, furthestStep))
+            if (Vector3Int.Distance(Performer.targetGridPosition, possibleStep) > Vector3Int.Distance(Performer.targetGridPosition, furthestStep) && !GridManager.Instance.IsEntityOnPosition(possibleStep))
             {
                 furthestStep = possibleStep;
             }
@@ -88,10 +88,10 @@ public class StepAwayAbility : Ability
     public List<Vector3Int> GetJumpPossiblePositions()
     {
         List<Vector3Int> results = new List<Vector3Int>();
-        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.left), jumpDistance, 1));
-        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.up), jumpDistance, 1));
-        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.right), jumpDistance, 1));
-        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.down), jumpDistance, 1));
+        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.left), jumpDistance));
+        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.up), jumpDistance));
+        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.right), jumpDistance));
+        results.AddRange(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(Vector3Int.down), jumpDistance));
         return results;
     }
 }

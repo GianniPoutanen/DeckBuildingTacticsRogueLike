@@ -4,14 +4,10 @@ using System.Linq;
 using UnityEditor.Playables;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using static UnityEditor.PlayerSettings;
 
 public class Enemy : GridEntity
 {
-    [Header("Entity Energy and Pathing")]
-    public int maxEnergy = 1;
-    public int currentEnergy;
-    public int pathIndex = 0;
-    public List<Vector3Int> currentPath = new List<Vector3Int>();
 
     [Header("Attacking Variables")]
     [SerializeField]
@@ -21,6 +17,8 @@ public class Enemy : GridEntity
     public Ability[] AttacksInQueue;
     [SerializeField]
     public List<Attack> possibleAttacks = new List<Attack>();
+    [SerializeField]
+    public List<Attack> lastCheckedPossibleAttacks = new List<Attack>();
     protected PlayerController Player
     {
         get { return PlayerManager.Instance.Player; }
@@ -33,6 +31,8 @@ public class Enemy : GridEntity
         foreach (Attack attack in possibleAttacks)
             SetUpAttack(attack);
 
+        foreach (Attack attack in lastCheckedPossibleAttacks)
+            SetUpAttack(attack);
     }
 
     public override void Update()
@@ -51,32 +51,37 @@ public class Enemy : GridEntity
         if (Input.GetMouseButtonDown(0))
         {
             AttacksPanelSingleton.Instance.Attacks = possibleAttacks;
+            AttacksPanelSingleton.Instance.LastCheckedAttacks = lastCheckedPossibleAttacks;
             UIManager.Instance.OpenUI(UIPanels.AttackPanel);
         }
     }
     public virtual IEnumerator DoTurn()
     {
-        if (attackQueue.Count > 0)
+        for (currentEnergy = 0; currentEnergy < maxEnergy;)
         {
-            // Move towards player default
-            yield return PerformJabWithAttackInQueue();
-            GridManager.Instance.UpdateEnemyActionTiles();
-        }
-        else
-        {
-            TryQueueAttack();
-
-            if (attackQueue.Count == 0)
+            yield return new WaitForSeconds(0.1f);
+            if (attackQueue.Count > 0)
             {
                 // Move towards player default
-                PerformMoveAction();
+                yield return PerformJabWithAttackInQueue();
+                GridManager.Instance.UpdateEnemyActionTiles();
             }
             else
             {
-                yield return StartCoroutine(PerformJabWithAttackInQueue());
+                TryQueueAttack();
+
+                if (attackQueue.Count == 0)
+                {
+                    // Move towards player default
+                    yield return StartCoroutine(PerformMoveAction());
+                }
+                else
+                {
+                    yield return StartCoroutine(PerformJabWithAttackInQueue());
+                }
             }
         }
-
+        yield return new WaitForSeconds(0.1f);
         yield return null;
     }
 
@@ -89,20 +94,32 @@ public class Enemy : GridEntity
             if (attack.triggerAbility.CanPerform(Player.targetGridPosition))
                 attacks.Add(attack);
         }
+        if (attacks.Count == 0)
+            foreach (Attack attack in lastCheckedPossibleAttacks)
+            {
+                AbilityBuilder.GetBuilder(attack.triggerAbility).SetPerformer(this).Build();
+                if (attack.triggerAbility.CanPerform(Player.targetGridPosition))
+                    attacks.Add(attack);
+            }
         if (attacks.Count > 0)
         {
             int index = Random.Range(0, attacks.Count);
-            (new EnqueuAttackAction(this,attacks[index])).Perform();
+            (new EnqueuAttackAction(this, attacks[index])).Perform();
         }
     }
 
-    public virtual void PerformMoveAction()
+    public virtual IEnumerator PerformMoveAction()
     {
         pathIndex++;
         FindPathToPlayer();
-        if (currentPath.Count > 0 && !GridManager.Instance.HasEntitiesAtPosition(currentPath.First()))
-            StepTowardsGridPosition(currentPath.First());
+        if (currentPath.Count > 0)
+            StepTowardsGridPosition(currentPath);
+        else
+            currentEnergy++;
+
+        yield return null;
     }
+
 
     public virtual IEnumerator PerformJabWithAttackInQueue()
     {
@@ -112,16 +129,29 @@ public class Enemy : GridEntity
         GridManager.Instance.UpdateEnemyActionTiles();
     }
 
-    public void StepTowardsGridPosition(Vector3Int nextGridPosition)
+    public void StepTowardsGridPosition(List<Vector3Int> path)
     {
-        AbilityBuilder.GetBuilder(new MoveSelfAbility()).SetPerformer(this).SetTargetPosition(nextGridPosition).SetRange(1).Build().Perform();
+        Vector3Int nextGridPosition = path.First();
+        path.Reverse();
+        foreach (var pos in path)
+        {
+            if (Vector3Int.Distance(pos, this.targetGridPosition) <= maxEnergy - currentEnergy)
+            {
+                nextGridPosition = pos;
+                break;
+            }
+        }
+        if (nextGridPosition != null && !GridManager.Instance.HasEntitiesAtPosition(nextGridPosition))
+            AbilityBuilder.GetBuilder(new MoveSelfAbility()).SetPerformer(this).SetTargetPosition(nextGridPosition).SetRange(1).SetCost((int)Vector3Int.Distance(nextGridPosition, this.targetGridPosition)).Build().Perform();
+        else
+            currentEnergy++;
     }
 
     void FindPathToPlayer()
     {
         Vector3Int startCell = GridManager.Instance.GetGridPositionFromWorldPoint(this.targetGridPosition);
-        Vector3Int targetCell = GridManager.Instance.GetGridPositionFromWorldPoint(PlayerManager.Instance.Player.targetGridPosition);
-        currentPath = GridManager.Instance.FindPath(startCell, targetCell, new List<string>());
+        Vector3Int targetCell = GridManager.Instance.GetClosestEmptyNeighbour(this.targetGridPosition, PlayerManager.Instance.Player.targetGridPosition);
+        currentPath = GridManager.Instance.FindPath(startCell, targetCell, new List<string>() { "Player"} );
         string path = "";
         foreach (var p in currentPath)
             path += p + " ";

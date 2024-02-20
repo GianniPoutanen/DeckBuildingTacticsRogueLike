@@ -51,8 +51,8 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     // Example usage:
     void Start()
     {
-        PlayerDeck.DrawCard();
-        PlayerDeck.DrawCard();
+        SpawnCard(PlayerDeck.DrawCard());
+        SpawnCard(PlayerDeck.DrawCard());
     }
 
     private void OnDestroy()

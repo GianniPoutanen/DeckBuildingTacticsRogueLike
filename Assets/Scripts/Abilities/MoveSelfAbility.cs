@@ -25,6 +25,7 @@ public class MoveSelfAbility : Ability
 
     public override void Undo()
     {
+        base.Undo();
         Performer.transform.position = oldPosition;
         Performer.targetGridPosition = oldPosition;
 
@@ -39,6 +40,7 @@ public class MoveSelfAbility : Ability
 
     public override void Redo()
     {
+        base.Redo();
         Performer.transform.position = newPosition;
         Performer.targetGridPosition = newPosition;
 
@@ -81,6 +83,7 @@ public class MoveSelfAbility : Ability
         return Performer.CanMoveTo(position) && travelPathCount != 0 && travelPathCount <= range;
     }
 
+
     public Ability Build()
     {
         throw new NotImplementedException();
@@ -95,6 +98,11 @@ public class MoveSelfBuilder : AbilityBuilder
     {
         return moveSelfAbility;
     }
+    public override AbilityBuilder SetCost(int cost)
+    {
+        moveSelfAbility.cost = cost;
+        return base.SetCost(cost);
+    }
 
     public MoveSelfBuilder(MoveSelfAbility ability)
     {
@@ -104,7 +112,7 @@ public class MoveSelfBuilder : AbilityBuilder
     public override AbilityBuilder SetPerformer(GridEntity performer)
     {
         moveSelfAbility.Performer = performer;
-        return this;
+        return base.SetPerformer(performer);
     }
 
     public override AbilityBuilder SetTargetPosition(Vector3Int position)

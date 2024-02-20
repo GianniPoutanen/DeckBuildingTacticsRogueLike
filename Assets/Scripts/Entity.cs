@@ -5,6 +5,10 @@ using UnityEngine;
 public abstract class Entity : MonoBehaviour
 {
     public bool Enabled = true;
+    [Header("Turn Action Energy")]
+    public int maxEnergy = 1;
+    public int currentEnergy;
+
     [Header("Base Entity Stats")]
     public bool CanDamage;
     [SerializeField]
@@ -141,7 +145,9 @@ public abstract class Entity : MonoBehaviour
             }
 
             if (ability != null)
+            {
                 ability.Perform();
+            }
             // Wait for a short duration
             yield return new WaitForSeconds(0.01f);
             // Move back to the original position

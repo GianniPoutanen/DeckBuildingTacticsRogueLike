@@ -6,6 +6,7 @@ public class PlayCardAction : Ability, IUndoRedoAction
     public PlayCardAction(Card card)
     {
         this.card = card;
+        Performer = PlayerManager.Instance.Player;
     }
 
     public override void Perform()
@@ -21,7 +22,7 @@ public class PlayCardAction : Ability, IUndoRedoAction
     {
         for (int i = card.abilities.Length - 1; i >= 0; i--)
         {
-            card.abilities[i].Undo();
+            UndoRedoManager.Instance.Undo();
         }
         UIManager.Instance.Hand.SpawnCard(card);
     }
@@ -30,7 +31,7 @@ public class PlayCardAction : Ability, IUndoRedoAction
     {
         foreach (var action in card.abilities)
         {
-            action.Redo();
+            UndoRedoManager.Instance.Redo();
         }
         PlayerManager.Instance.discardPile.Insert(card, 0);
     }

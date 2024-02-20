@@ -19,7 +19,7 @@ public class PlayerController : GridEntity
     {
         // Skip Enery Button
         if (Input.GetKeyDown(KeyCode.Tab))
-            (new UseEnergyAction() { amount = 1, Performer = this }).Perform();
+            (new UseEnergyAction() { cost = 1, Performer = this }).Perform();
 
         if (EventManager.Instance.EventsRunning)
         {
@@ -79,11 +79,7 @@ public class PlayerController : GridEntity
         // Check if the new target position is valid
         if (GridManager.Instance.IsFloorGridPositionEmpty(newTargetGridPosition))
         {
-            CompositeAction movePlayerAction = (CompositeAction)AbilityBuilder.GetBuilder(new CompositeAction()
-            {
-                actions = new List<Ability>(){AbilityBuilder.GetBuilder(new MoveSelfAbility()).SetPerformer(this).SetTargetPosition(newTargetGridPosition).Build(),
-                                              new UseEnergyAction() { Performer = this, amount = movementCost } }
-            }).SetPerformer(this).Build();
+            Ability movePlayerAction = AbilityBuilder.GetBuilder(new MoveSelfAbility()).SetPerformer(this).SetTargetPosition(newTargetGridPosition).SetCost(1).Build();
             CurrentActions.Push(movePlayerAction);
             movePlayerAction.Perform();
             EventManager.Instance.InvokeEvent(EventType.UpdateUI);

@@ -17,7 +17,7 @@ public class EnqueuAttackAction : Ability
 
     public override void Perform()
     {
-        base.Perform();
+        UndoRedoManager.Instance.AddUndoAction(this);
         AbilityBuilder abilityBuilder = AbilityBuilder.GetBuilder(attack.triggerAbility);
         enemy.attackQueue.Enqueue(abilityBuilder.SetTargetPosition(PlayerManager.Instance.Player.targetGridPosition).SetPerformer(Performer).Build());
         foreach (Ability ability in attack.followUpAbilities)
