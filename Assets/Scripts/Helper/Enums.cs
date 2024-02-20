@@ -83,3 +83,16 @@ public enum TileType
     EnemyAttackTile,
     EnemyMoveTile
 }
+
+public enum Status
+{
+    Poison,
+    Weaken,
+    Hasten,
+    Shielded,
+    Regeneration,
+    Strength,
+    Stunned,
+    Rooted,
+    Marked
+}

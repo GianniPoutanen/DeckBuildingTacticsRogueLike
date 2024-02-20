@@ -56,25 +56,40 @@ public class Enemy : GridEntity
     }
     public virtual IEnumerator DoTurn()
     {
-        if (attackQueue.Count > 0)
+        TurnStart();
+        if (!Stunned)
         {
-            // Move towards player default
-            yield return PerformJabWithAttackInQueue();
-            GridManager.Instance.UpdateEnemyActionTiles();
-        }
-        else
-        {
-            TryQueueAttack();
-
-            if (attackQueue.Count == 0)
+            if (attackQueue.Count > 0)
             {
                 // Move towards player default
-                PerformMoveAction();
+                yield return PerformJabWithAttackInQueue();
+                GridManager.Instance.UpdateEnemyActionTiles();
             }
             else
             {
-                yield return StartCoroutine(PerformJabWithAttackInQueue());
+                TryQueueAttack();
+
+                if (attackQueue.Count > 0)
+                {
+                    yield return StartCoroutine(PerformJabWithAttackInQueue());
+                }
+                else // Try Move
+                {
+                    if (!Rooted)
+                    {
+                        // Move towards player default
+                        PerformMoveAction();
+                    }
+                    else
+                    {
+                        Rooted = false;
+                    }
+                }
             }
+        }
+        else
+        {
+            Stunned = false;
         }
 
         yield return null;
@@ -92,7 +107,7 @@ public class Enemy : GridEntity
         if (attacks.Count > 0)
         {
             int index = Random.Range(0, attacks.Count);
-            (new EnqueuAttackAction(this,attacks[index])).Perform();
+            (new EnqueuAttackAction(this, attacks[index])).Perform();
         }
     }
 

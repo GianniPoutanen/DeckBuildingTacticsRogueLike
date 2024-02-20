@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 [CreateAssetMenu(menuName = "Abilities/Attacks/Straight Attack Action")]
 public class StraightAttackAbility : Ability
 {
+    private int beforePerformerHealth;
+    private int afterPerformerHealth;
+
     private enum AttackAttributes
     {
         BeforeHeatlh,
@@ -22,6 +25,9 @@ public class StraightAttackAbility : Ability
     public int range;
     public int deadRange;
     public bool allowDiagonals;
+    public bool pierce = false;
+    public bool drain = false;
+    public bool backstab = false;
 
     public override void Undo()
     {
@@ -36,6 +42,9 @@ public class StraightAttackAbility : Ability
             }
             attackSequanceRedoStack.Push(attackSequance);
         }
+
+        if (drain)
+            Performer.CurrentHeatlh = beforePerformerHealth;
     }
 
     public override void Redo()
@@ -61,17 +70,30 @@ public class StraightAttackAbility : Ability
         base.Perform();
         List<GridEntity> targets = GridManager.Instance.GetEntitiesOnPositions(GridManager.Instance.GetPositionsInDirection(Performer.targetGridPosition, GridManager.RoundToCardinal(TargetPosition - Performer.targetGridPosition), range), entityMask);
         Dictionary<GridEntity, Dictionary<AttackAttributes, int>> attackSequance = new Dictionary<GridEntity, Dictionary<AttackAttributes, int>>();
+        beforePerformerHealth = Performer.Health;
         foreach (var target in targets)
         {
             Debug.Log($"{Performer.name} attacks {target.name} for {damage} damage.");
             attackSequance.Add(target, new Dictionary<AttackAttributes, int>());
             attackSequance[target].Add(AttackAttributes.BeforeHeatlh, target.Health);
             attackSequance[target].Add(AttackAttributes.BeforeArmour, target.Armour);
-            target.Damage(damage);
+
+            if (pierce)
+                target.PierceDamage(damage + Performer.Statuses[Status.Strength]);
+            else
+                target.Damage(damage + Performer.Statuses[Status.Strength]);
+
+            if (drain)
+            {
+                Performer.Heal(attackSequance[target][AttackAttributes.BeforeHeatlh] - target.Health);
+            }
+
+            target.Damage(damage + Performer.Statuses[Status.Strength]);
             attackSequance[target].Add(AttackAttributes.AfterHeatlh, target.Health);
             attackSequance[target].Add(AttackAttributes.AfterArmour, target.Armour);
         }
         attackSequanceUndoStack.Push(attackSequance);
+        afterPerformerHealth = Performer.Health;
         UIManager.Instance.UpdateUI();
     }
 

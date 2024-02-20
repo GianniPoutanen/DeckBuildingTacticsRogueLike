@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c82263eb99d615840b1251eb4a112156, type: 3}
   m_Name: Shoot
   m_EditorClassIdentifier: 
-  entityMask: []
+  entityMask:
+  - Player
   damage: 5
   range: 3
   deadRange: 1
+  allowDiagonals: 0
