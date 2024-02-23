@@ -149,9 +149,9 @@ public class StraightAttackBuilder : AbilityBuilder
         return base.SetTargetPosition(position);
     }
 
-    public override AbilityBuilder SetDamage(int amount)
+    public override AbilityBuilder SetAmount(int amount)
     {
         attackAbility.damage = amount;
-        return base.SetDamage(amount);
+        return base.SetAmount(amount);
     }
 }

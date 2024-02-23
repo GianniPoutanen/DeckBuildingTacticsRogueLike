@@ -64,10 +64,67 @@ public class GridManager : MonoBehaviour
     private List<Vector3Int> selectedEnemyDangerPositions = new List<Vector3Int>();
     private List<Ability> enemyAbilitiesQueued = new List<Ability>();
 
+
+    [Header("Grid Related Checks - leave false")]
+    public bool AllEntitiesSpawned = false;
+    public bool AllEnemiesKilled = false;
+    public bool PlayerKilled = false;
+
     private void OnDestroy()
     {
         UnsubscribeToEvents();
     }
+
+    private void Update()
+    {
+        MakeGridRelatedChecks();
+    }
+
+    public void MakeGridRelatedChecks()
+    {
+        if (!AllEntitiesSpawned && entities.Count == (GameObject.FindGameObjectsWithTag("Enemy").Count() + GameObject.FindGameObjectsWithTag("Ally").Count() + GameObject.FindGameObjectsWithTag("Player").Count()))
+        {
+            EventManager.Instance.InvokeEvent(EventType.AllEntitiesSpawned);
+            AllEntitiesSpawned = true;
+        }
+        if (AllEntitiesSpawned && !PlayerKilled)
+        {
+            bool playerFound = false;
+            foreach (GridEntity entity in entities)
+            {
+                if (entity == PlayerManager.Instance.Player)
+                {
+                    playerFound = true;
+                    break;
+                }
+            }
+            if (!playerFound)
+            {
+                EventManager.Instance.InvokeEvent(EventType.PlayerKilled);
+                PlayerKilled = true;
+            }
+        }
+
+        if (AllEntitiesSpawned && !AllEnemiesKilled)
+        {
+            bool enemyFound = false;
+            foreach (GridEntity entity in entities)
+            {
+                if (entity.tag == "Enemy")
+                {
+                    enemyFound = true;
+                    break;
+                }
+            }
+            if (!enemyFound)
+            {
+                EventManager.Instance.InvokeEvent(EventType.AllEnemiesKilled);
+                AllEnemiesKilled = true;
+            }
+        }
+
+    }
+
 
     public Entity GetEntityUnderMouse()
     {
@@ -96,9 +153,9 @@ public class GridManager : MonoBehaviour
         List<Vector3Int> selectedMoveGridPositions = new List<Vector3Int>();
         foreach (Entity entity in entities)
         {
-            if (entity is Enemy)
+            if (entity is EnemyAlly)
             {
-                Enemy enemy = (Enemy)entity;
+                EnemyAlly enemy = (EnemyAlly)entity;
                 if (enemy.attackQueue.Count > 0)
                 {
                     AbilityBuilder.GetBuilder(enemy.attackQueue.Peek()).SetPerformer(enemy);
@@ -297,6 +354,30 @@ public class GridManager : MonoBehaviour
     #endregion Event Handlers
 
     #region Helper functions
+
+    public GridEntity FindClosestGridEntityFromTargetPosition(Vector3Int position, List<string> entityMask)
+    {
+        GridEntity closestEntity = null;
+        float closestDistance = float.MaxValue;
+
+        foreach (GridEntity gridEntity in entities)
+        {
+            // Check if the entity type matches the entityMask
+            if (entityMask.Contains(gridEntity.tag))
+            {
+                // Calculate the distance between the current entity's position and the target position
+                float distance = Vector3Int.Distance(position, gridEntity.targetGridPosition);
+
+                // Update the closest entity if the current entity is closer
+                if (distance < closestDistance)
+                {
+                    closestEntity = gridEntity;
+                    closestDistance = distance;
+                }
+            }
+        }
+        return closestEntity;
+    }
 
     public void ClearAllSelectionTilemaps()
     {

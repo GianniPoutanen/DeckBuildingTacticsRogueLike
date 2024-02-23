@@ -45,12 +45,20 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
     public override void Update()
     {
         base.Update();
-        // Interpolate the current local position towards the target local position
-        Vector2 newLocalPosition = Vector2.Lerp(transform.localPosition, targetLocalPosition, Time.deltaTime * moveSpeed);
-        transform.localPosition = newLocalPosition;
+        if (UIManager.Instance.Hand.cardBeingPlayed == this && UIManager.Instance.Hand.cardToPlayPosition != null)
+        {
+            Vector2 newLocalPosition = Vector2.Lerp(transform.position, UIManager.Instance.Hand.cardToPlayPosition.position, Time.deltaTime * moveSpeed);
+            transform.position = newLocalPosition;
+        }
+        else
+        {
+            // Interpolate the current local position towards the target local position
+            Vector2 newLocalPosition = Vector2.Lerp(transform.localPosition, targetLocalPosition, Time.deltaTime * moveSpeed);
+            transform.localPosition = newLocalPosition;
 
-        float distanceToMouse = Vector2.Distance(transform.position, Input.mousePosition);
-        RectTransform.localPosition += new Vector3(0, 0, (Mathf.RoundToInt(-distanceToMouse) / 50f) + (UIManager.Instance.Hand.cardUnderMouse == this ? -10f : 0f));
+            float distanceToMouse = Vector2.Distance(transform.position, Input.mousePosition);
+            RectTransform.localPosition += new Vector3(0, 0, (Mathf.RoundToInt(-distanceToMouse) / 50f) + (UIManager.Instance.Hand.cardUnderMouse == this ? -10f : 0f));
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -105,9 +113,8 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
         }
     }
 
-    private void TryPlayCard()
+    public void TryPlayCard()
     {
-
         // Check if the card can be played
         if (card != null && card.abilities.Length > 0 && card.range > 0 ? card.CanPlay(GridManager.Instance.GetGridPositionFromWorldPoint(Camera.main.ScreenToWorldPoint(Input.mousePosition))) : card.CanPlay(PlayerManager.Instance.Player.targetGridPosition))
         {
@@ -124,6 +131,14 @@ public class CardUI : UIElement, IDragHandler, IEndDragHandler, IPointerExitHand
             Debug.Log("Couldn't play card");
         }
     }
+
+    public void DiscardCard()
+    {
+        PlayerManager.Instance.discardPile.AddCard(card);
+        UIManager.Instance.Hand.cardsInHand.Remove(this);
+        Destroy(this.gameObject);
+    }
+
 
     public void OnPointerExit(PointerEventData eventData)
     {

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4dd970a19bb47e94aa4035360175ff70, type: 3}
+  m_Name: Knights Vow
+  m_EditorClassIdentifier: 
+  entityMask: []
+  cost: 1
+  actions:
+  - {fileID: 11400000, guid: 6a315d34cdaed8b40a08a9f6571662d6, type: 2}
+  - {fileID: 11400000, guid: 711033191cc8f874281ee953c811cf8b, type: 2}
+  TriggerOnFirstAction: 0

@@ -18,7 +18,7 @@ public class PlayerHealthBar : MonoBehaviour
     void UpdateHealthBar()
     {
         // Update the UI Slider value based on the current health
-        healthSlider.value = PlayerManager.Instance.playerHealth/ PlayerManager.Instance.maxPlayerHealth;
+        healthSlider.value = PlayerManager.Instance.Player.Health / PlayerManager.Instance.Player.MaxHealth;
     }
 
     public void SubscribeToEvents()

@@ -8,6 +8,7 @@ public enum EventType
     GameStart,
 
     // Player
+    PlayerKilled,
     PlayerAttacked,
     TurnTickComplete,
 
@@ -18,11 +19,15 @@ public enum EventType
     DeckShuffled,
 
     EndPlayerTurn,
+
     //Entity
+    AllEntitiesSpawned,
     EntitySpawned,
     EntityDestroyed,
+    EntityInteracted,
 
     // Enemy 
+    AllEnemiesKilled,
     EntityTurn,
     EndEnemyTurn,
     UpdateUI,

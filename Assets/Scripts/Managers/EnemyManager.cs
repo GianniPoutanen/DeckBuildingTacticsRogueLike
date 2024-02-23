@@ -44,7 +44,7 @@ public class EnemyManager : MonoBehaviour
         UnsubscribeToEvents();
     }
 
-    private List<Enemy> enemies = new List<Enemy>();
+    private List<EnemyAlly> enemies = new List<EnemyAlly>();
 
     public void EndPlayerTurnHandler()
     {
@@ -78,14 +78,14 @@ public class EnemyManager : MonoBehaviour
 
     public void EntitySpawnedHandler(Entity entity)
     {
-        if (entity is Enemy)
-            enemies.Add((Enemy)entity);
+        if (entity is EnemyAlly)
+            enemies.Add((EnemyAlly)entity);
     }
 
     public void EntityDestroyedHandler(Entity entity)
     {
-        if (entity is Enemy)
-            enemies.Remove((Enemy)entity);
+        if (entity is EnemyAlly)
+            enemies.Remove((EnemyAlly)entity);
     }
 
     public void SubscribeToEvents()

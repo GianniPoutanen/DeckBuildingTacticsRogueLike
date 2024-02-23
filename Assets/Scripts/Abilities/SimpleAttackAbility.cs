@@ -88,12 +88,12 @@ public class SimpleAttackAbility : Ability
     public override bool CanPerform(Vector3Int position)
     {
         var target = GridManager.Instance.GetEntityOnPosition(position, entityMask);
-        return target != null && target != Performer && (global || GridManager.Instance.GetWalkingDistance(Performer.targetGridPosition, position) <= range);
+        return target != null && target != Performer && (global || GridManager.Instance.GetWalkingDistance(Performer.targetGridPosition, position) <= range);   
     }
 
     public override List<Vector3Int> GetAbilityPositions()
     {
-        return new List<Vector3Int> { TargetPosition };
+        return new List<Vector3Int> { TargetPosition * new Vector3Int(1,1,0) };
     }
 
     public override List<Vector3Int> GetPossiblePositions(Vector3Int originPosition)
@@ -128,7 +128,7 @@ public class SimpleAttackBuilder : AbilityBuilder
     }
 
     public override AbilityBuilder SetPerformer(GridEntity performer)
-    {
+        {
         attackAbility.Performer = performer;
         return base.SetPerformer(performer);
     }
@@ -139,10 +139,10 @@ public class SimpleAttackBuilder : AbilityBuilder
         return base.SetTargetPosition(position);
     }
 
-    public override AbilityBuilder SetDamage(int amount)
+    public override AbilityBuilder SetAmount(int amount)
     {
         attackAbility.damage = amount;
-        return base.SetDamage(amount);
+        return base.SetAmount(amount);
     }
 
     public override AbilityBuilder SetRange(int range)

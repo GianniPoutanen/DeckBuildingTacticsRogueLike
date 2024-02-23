@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Xml.Linq;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -66,12 +67,15 @@ public class UIManager : MonoBehaviour
 
     [Header("Player UI References")]
     public Slider playerHealthBar;
+    public TextMeshProUGUI playerHealthLabel;
+    public TextMeshProUGUI playerArmourLabel;
 
     [Header("Enemy UI References")]
     public GameObject smallDynamicHealthBarPrefab;
 
     [Header("Panels")]
     public AttacksPanelSingleton attackPanel;
+    public GameObject victoryPanel;
 
     public Stack<UIElement> panelStack = new Stack<UIElement>();
 
@@ -79,6 +83,7 @@ public class UIManager : MonoBehaviour
     {
         raycaster = this.GetComponent<GraphicRaycaster>();
     }
+
 
     private void OnDestroy()
     {
@@ -91,6 +96,14 @@ public class UIManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             CloseLastUI();
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (this.Hand.cardBeingPlayed != null)
+            {
+                this.Hand.cardBeingPlayed.TryPlayCard();
+            }
         }
     }
 
@@ -159,9 +172,40 @@ public class UIManager : MonoBehaviour
         }
     }
 
+
+
+    #region Event Handlers
+    public void SubscribeToEvents()
+    {
+        EventManager.Instance.AddListener(EventType.UpdateUI, UpdateUI);
+        EventManager.Instance.AddListener(EventType.AllEnemiesKilled, AllEnemiesKilledHandler);
+        EventManager.Instance.AddListener<Entity>(EventType.EntitySpawned, CreateHealthBar);
+    }
+
+    public void UnsubscribeToEvents()
+    {
+        EventManager.Instance.RemoveListener(EventType.UpdateUI, UpdateUI);
+        EventManager.Instance.RemoveListener(EventType.AllEnemiesKilled, AllEnemiesKilledHandler);
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntitySpawned, CreateHealthBar);
+    }
+
+    public void AllEnemiesKilledHandler()
+    {
+        Debug.Log("ALL ENEMIES SLAIN!");
+        victoryPanel.SetActive(true); 
+    }
+
+    public void UpdateUI()
+    {
+        playerHealthBar.value = (float)((float)PlayerManager.Instance.Player.CurrentHeatlh / (float)PlayerManager.Instance.Player.MaxHealth);
+        playerHealthLabel.text = PlayerManager.Instance.Player.Health.ToString();
+        playerArmourLabel.text = PlayerManager.Instance.Player.Armour.ToString();
+
+    }
+
     public void CreateHealthBar(Entity entity)
     {
-        if (entity.tag == "Enemy")
+        if (entity.tag == "Enemy" || entity.tag == "Ally")
         {
             // Instantiate a new health bar from the prefab
             GameObject newHealthBar = Instantiate(smallDynamicHealthBarPrefab, canvas.transform);
@@ -180,24 +224,6 @@ public class UIManager : MonoBehaviour
             // Activate the health bar
             newHealthBar.gameObject.SetActive(true);
         }
-    }
-
-    public void UpdateUI()
-    {
-        playerHealthBar.value = (float)((float)PlayerManager.Instance.playerHealth / (float)PlayerManager.Instance.maxPlayerHealth);
-    }
-
-    #region Event Handlers
-    public void SubscribeToEvents()
-    {
-        EventManager.Instance.AddListener(EventType.UpdateUI, UpdateUI);
-        EventManager.Instance.AddListener<Entity>(EventType.EntitySpawned, CreateHealthBar);
-    }
-
-    public void UnsubscribeToEvents()
-    {
-        EventManager.Instance.RemoveListener(EventType.UpdateUI, UpdateUI);
-        EventManager.Instance.RemoveListener<Entity>(EventType.EntitySpawned, CreateHealthBar);
     }
     #endregion Event Handlers
 }

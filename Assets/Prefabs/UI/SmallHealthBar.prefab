@@ -576,4 +576,4 @@ MonoBehaviour:
   armourText: {fileID: 7077250291329293456}
   entityTransform: {fileID: 0}
   entity: {fileID: 0}
-  showTime: 0.4
+  showTime: 1

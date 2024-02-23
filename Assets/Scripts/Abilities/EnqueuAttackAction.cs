@@ -5,13 +5,13 @@ using UnityEngine;
 
 public class EnqueuAttackAction : Ability
 {
-    public Enemy enemy;
+    public EnemyAlly entity;
     public Attack attack;
 
-    public EnqueuAttackAction(Enemy enemy, Attack attack)
+    public EnqueuAttackAction(EnemyAlly entity, Attack attack)
     {
-        Performer = enemy;
-        this. enemy = enemy;
+        Performer = entity;
+        this. entity = entity;
         this.attack = attack;
     }
 
@@ -19,9 +19,9 @@ public class EnqueuAttackAction : Ability
     {
         UndoRedoManager.Instance.AddUndoAction(this);
         AbilityBuilder abilityBuilder = AbilityBuilder.GetBuilder(attack.triggerAbility);
-        enemy.attackQueue.Enqueue(abilityBuilder.SetTargetPosition(PlayerManager.Instance.Player.targetGridPosition).SetPerformer(Performer).Build());
+        entity.attackQueue.Enqueue(abilityBuilder.SetTargetPosition(TargetPosition).SetPerformer(Performer).Build());
         foreach (Ability ability in attack.followUpAbilities)
-            enemy.attackQueue.Enqueue(AbilityBuilder.GetBuilder(ability).SetPerformer(Performer).SetTargetPosition(PlayerManager.Instance.Player.targetGridPosition).Build());
+            entity.attackQueue.Enqueue(AbilityBuilder.GetBuilder(ability).SetPerformer(Performer).SetTargetPosition(entity.currentTarget.targetGridPosition).Build());
         GridManager.Instance.UpdateEnemyActionTiles();
     }
 
@@ -32,7 +32,7 @@ public class EnqueuAttackAction : Ability
 
     public override void Undo()
     {
-        enemy.attackQueue.Clear();
+        entity.attackQueue.Clear();
         GridManager.Instance.UpdateEnemyActionTiles();
     }
 }

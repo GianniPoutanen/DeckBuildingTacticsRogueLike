@@ -55,10 +55,12 @@ public class GridEntity : Entity
     #region Event Handlers
     public override void SubscribeToEvents()
     {
+        base.SubscribeToEvents();
     }
 
     public override void UnsubscribeToEvents()
     {
+        base.UnsubscribeToEvents();
     }
     #endregion Event Handlers
 }

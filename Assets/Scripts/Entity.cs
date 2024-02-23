@@ -45,14 +45,17 @@ public abstract class Entity : MonoBehaviour
         EventManager.Instance.InvokeEvent<Entity>(EventType.EntitySpawned, this);
         SubscribeToEvents();
         Health = MaxHealth;
-
-
     }
 
     public virtual void OnDestroy()
     {
         EventManager.Instance.InvokeEvent<Entity>(EventType.EntityDestroyed, this);
         UnsubscribeToEvents();
+    }
+
+    public virtual void SetupEntity()
+    {
+
     }
 
     public virtual void TurnStart()
@@ -108,11 +111,13 @@ public abstract class Entity : MonoBehaviour
 
     public virtual void Shield(int amount)
     {
+        EventManager.Instance.InvokeEvent<Entity>(EventType.EntityInteracted, this);
         Armour += amount;
     }
 
     public virtual void Heal(int amount)
     {
+        EventManager.Instance.InvokeEvent<Entity>(EventType.EntityInteracted, this);
         if (Health + amount > MaxHealth)
         {
             Health = MaxHealth;
@@ -125,7 +130,8 @@ public abstract class Entity : MonoBehaviour
 
     public virtual void Damage(int amount)
     {
-        int totalAmount = ((amount * GetStatus(Status.Weaken) > 0 ? 2 : 1) - GetStatus(Status.Shielded)) * GetStatus(Status.Marked)> 0 ? 3 : 1;
+        EventManager.Instance.InvokeEvent<Entity>(EventType.EntityInteracted, this);
+        int totalAmount = ((amount * (GetStatus(Status.Weaken) > 0 ? 2 : 1)) - GetStatus(Status.Shielded)) * (GetStatus(Status.Marked)> 0 ? 3 : 1);
         int leftOver = totalAmount;
         if (Armour > 0)
         {
@@ -148,13 +154,14 @@ public abstract class Entity : MonoBehaviour
         }
         // Hacky way of getting rid of marked but allowing undo
         if (GetStatus(Status.Marked) > 0 && this is GridEntity)
-            UndoRedoManager.Instance.AddUndoAction(new GiveStatusAbility() { Performer = (GridEntity)this, amount = -1, status = Status.Marked });
+            UndoRedoManager.Instance.AddUndoAction(new GiveTargetStatusAbility() { Performer = (GridEntity)this, amount = -1, status = Status.Marked });
 
         DeathCheck();
     }
 
     public virtual void PierceDamage(int amount)
     {
+        EventManager.Instance.InvokeEvent<Entity>(EventType.EntityInteracted, this);
         if (Health - amount <= 0)
             Health = 0;
         else
@@ -169,14 +176,27 @@ public abstract class Entity : MonoBehaviour
             this.Destroy();
     }
 
+
     public virtual bool CanMoveTo(Vector3Int position)
     {
         return true;
     }
+
     #endregion Healing and Damage
 
-    public abstract void SubscribeToEvents();
-    public abstract void UnsubscribeToEvents();
+    #region Event Handlers
+
+    public virtual void SubscribeToEvents()
+    {
+        EventManager.Instance.AddListener(EventType.AllEntitiesSpawned, SetupEntity);
+    }
+
+    public virtual void UnsubscribeToEvents()
+    {
+        EventManager.Instance.RemoveListener(EventType.AllEntitiesSpawned, SetupEntity);
+    }
+
+    #endregion Event Handlers
 
     public IEnumerator JabCoroutine(Vector3 direction, float speed, float distance, Ability ability = null)
     {

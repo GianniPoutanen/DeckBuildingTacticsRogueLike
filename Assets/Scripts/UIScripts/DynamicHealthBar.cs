@@ -15,9 +15,15 @@ public class DynamicHealthBar : MonoBehaviour
 
     void Start()
     {
+        SubscribeToEvents();
         hideTimer = showTime;
         UpdateHealthBar();
         bars.gameObject.SetActive(false); // Initially hide the health bar
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeToEvents();
     }
 
     void Update()
@@ -69,4 +75,49 @@ public class DynamicHealthBar : MonoBehaviour
 
         return false;
     }
+
+    public void Show()
+    {
+        hideTimer = 0;
+    }
+
+
+    #region Event Handlers
+    public void SubscribeToEvents()
+    {
+        EventManager.Instance.AddListener<Entity>(EventType.EntityInteracted, EntityInteractedHandler);
+        EventManager.Instance.AddListener<Entity>(EventType.EntityDestroyed, EntitySpawned);
+
+    }
+
+    public void UnsubscribeToEvents()
+    {
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntityInteracted, EntityInteractedHandler);
+        EventManager.Instance.RemoveListener<Entity>(EventType.EntityDestroyed, EntitySpawned);
+    }
+
+    public void EntityInteractedHandler(Entity entity)
+    {
+        if (this.entity == entity)
+        {
+            Show();
+        }
+    }
+
+    public void EntityDestroyed(Entity entity)
+    {
+        if (this.entity == entity)
+        {
+            this.gameObject.SetActive(false);
+        }
+    }
+    public void EntitySpawned(Entity entity)
+    {
+        if (this.entity == entity)
+        {
+            this.gameObject.SetActive(false);
+        }
+    }
+
+    #endregion Event Handlers
 }

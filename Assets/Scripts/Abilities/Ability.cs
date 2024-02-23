@@ -28,24 +28,24 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
 
     public virtual void Redo()
     {
-        if (this.Performer is Enemy)
+        if (this.Performer is EnemyAlly)
         {
-            (this.Performer as Enemy).attackQueue.Dequeue();
+            (this.Performer as EnemyAlly).attackQueue.Dequeue();
             GridManager.Instance.UpdateEnemyActionTiles();
         }
     }
 
     public virtual void Undo()
     {
-        if (this.Performer is Enemy)
+        if (this.Performer is EnemyAlly)
         {
             Queue<Ability> newQueue = new Queue<Ability>();
             newQueue.Enqueue(this);
-            foreach (Ability ability in (this.Performer as Enemy).attackQueue)
+            foreach (Ability ability in (this.Performer as EnemyAlly).attackQueue)
             {
                 newQueue.Enqueue(ability);
             }
-            (this.Performer as Enemy).attackQueue = newQueue;
+            (this.Performer as EnemyAlly).attackQueue = newQueue;
             GridManager.Instance.UpdateEnemyActionTiles();
         }
         else if (Performer == PlayerManager.Instance.Player)
@@ -152,7 +152,7 @@ public abstract class AbilityBuilder : IAbilityBuilder
         return this;
     }
 
-    public virtual AbilityBuilder SetDamage(int amount)
+    public virtual AbilityBuilder SetAmount(int amount)
     {
         return this;
     }
@@ -193,6 +193,14 @@ public abstract class AbilityBuilder : IAbilityBuilder
                 return new CompositeAbilityBuilder((CompositeAction)ability);
             case StepAwayAbility:
                 return new StepAwayBuilder((StepAwayAbility)ability);
+            case ShieldSelfAbility:
+                return new ShieldSelfBuilder((ShieldSelfAbility)ability);
+            case HealSelfAbility:
+                return new HealSelfBuilder((HealSelfAbility)ability);
+            case GiveSelfStatusAbility:
+                return new GiveSelfStatusBuilder((GiveSelfStatusAbility)ability);
+            case GiveTargetStatusAbility:
+                return new GiveTargetStatusBuilder((GiveTargetStatusAbility)ability);
         }
         return null;
     }

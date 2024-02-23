@@ -16,7 +16,8 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     }
     private HandState state;
     public bool mouseInHand;
-    public int handSizeLimit = 4;
+    public int handSizeLimit = 10;
+    public int turnHandSize = 2;
 
     [Header("Cards")]
     public GameObject cardPrefab;
@@ -24,6 +25,7 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     public CardUI cardBeingPlayed;
 
     public RectTransform cardSpawnPosition;
+    public RectTransform cardToPlayPosition;
     private Deck PlayerDeck { get { return PlayerManager.Instance.activeDeck; } }
     private Deck DiscardPile { get { return PlayerManager.Instance.discardPile; } }
 
@@ -51,8 +53,8 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     // Example usage:
     void Start()
     {
-        SpawnCard(PlayerDeck.DrawCard());
-        SpawnCard(PlayerDeck.DrawCard());
+        for (int i = 0; i < turnHandSize; i++)
+            SpawnCard(PlayerDeck.DrawCard());
     }
 
     private void OnDestroy()
@@ -66,6 +68,19 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         UpdateCardPositions();
         SetState();
         SetHandWidth();
+
+        for (int i = 1; i <= 9; i++)
+        {
+            if (Input.GetKeyDown(KeyCode.Alpha0 + i))
+            {
+                // Code to execute when the corresponding number key is pressed down
+                Debug.Log($"Number {i} key pressed");
+                if (cardsInHand.Count >= i && cardBeingPlayed != cardsInHand[i - 1])
+                    cardBeingPlayed = cardsInHand[i - 1];
+                else
+                    cardBeingPlayed = null;
+            }
+        }
     }
 
     public void SetHandWidth()
@@ -266,6 +281,7 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         EventManager.Instance.AddListener<CardUI>(EventType.CardEndDragging, CardEndDraggingHandler);
         EventManager.Instance.AddListener<Card>(EventType.CardPlayed, CardPlayedHandler);
         EventManager.Instance.AddListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.AddListener(EventType.EndPlayerTurn, EndPlayerTurnHandler);
     }
     public void UnsubscribeToEvents()
     {
@@ -273,10 +289,17 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
         EventManager.Instance.RemoveListener<CardUI>(EventType.CardEndDragging, CardEndDraggingHandler);
         EventManager.Instance.RemoveListener<Card>(EventType.CardPlayed, CardPlayedHandler);
         EventManager.Instance.RemoveListener(EventType.EndEnemyTurn, EndEnemyTurnHandler);
+        EventManager.Instance.RemoveListener(EventType.EndPlayerTurn, EndPlayerTurnHandler);
+    }
+    public void EndPlayerTurnHandler()
+    {
+        while (cardsInHand.Count > 0)
+            cardsInHand[0].DiscardCard();
     }
     public void EndEnemyTurnHandler()
     {
-        DrawCardToHand();
+        for (int i = 0; i < turnHandSize; i++)
+            DrawCardToHand();
     }
 
     public void OnPointerEnter(PointerEventData eventData)

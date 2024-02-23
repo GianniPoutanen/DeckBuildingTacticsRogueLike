@@ -29,21 +29,10 @@ public class PlayerManager : MonoBehaviour
         }
     }
 
-    private void Awake()
-    {
-        playerHealth = maxPlayerHealth;
-    }
-
     #endregion
 
     // Add your player-related variables and state here
     [Header("Players Stats")]
-    public int maxPlayerHealth = 40;
-    public int playerHealth = 40;
-    public int armour = 0;
-    public int maxEnergy = 2;
-    private int _energy = 2;
-
     public int maxMovement = 2;
     public int numMovement = 2;
 
@@ -85,10 +74,10 @@ public class PlayerManager : MonoBehaviour
     [SerializeField]
     public int CurrentEnergy
     {
-        get { return _energy; }
+        get { return Player.currentEnergy; }
         set
         {
-            _energy = value;
+            Player.currentEnergy = value;
             EventManager.Instance.InvokeEvent(EventType.UpdateUI);
         }
     }
@@ -98,7 +87,7 @@ public class PlayerManager : MonoBehaviour
 
     private void Start()
     {
-        CurrentEnergy = maxEnergy;
+        CurrentEnergy = Player.maxEnergy;
         // You can perform any necessary initialization here
         Player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerController>();
         SubscribeToEvents();
@@ -128,23 +117,23 @@ public class PlayerManager : MonoBehaviour
     private void HandlePlayerDamageTaken(int damageAmount)
     {
         // Add logic to handle player damage
-        playerHealth -= damageAmount;
+        Player.CurrentHeatlh -= damageAmount;
 
-        if (playerHealth <= 0)
+        if (Player.CurrentHeatlh <= 0)
         {
             // Player is defeated, perform game over logic or respawn logic here
             Debug.Log("Player defeated!");
         }
         else
         {
-            Debug.Log($"Player took {damageAmount} damage. Remaining health: {playerHealth}");
+            Debug.Log($"Player took {damageAmount} damage. Remaining health: {Player.CurrentHeatlh}");
         }
     }
 
     // Example method to apply damage to the player
     public void ApplyDamage(int damageAmount)
     {
-        playerHealth -= damageAmount;
+        Player.CurrentHeatlh -= damageAmount;
         // Invoke the PlayerDamageTaken event with the specified damage amount
         EventManager.Instance.InvokeEvent(EventType.PlayerAttacked, damageAmount);
     }
@@ -176,7 +165,8 @@ public class PlayerManager : MonoBehaviour
 
     public void EndEnemyTurnHandler()
     {
-        CurrentEnergy = maxEnergy + Player.GetStatus(Status.Hasten);
+        CurrentEnergy = Player.maxEnergy + Player.GetStatus(Status.Hasten);
+        Player.Armour = 0;
         EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 

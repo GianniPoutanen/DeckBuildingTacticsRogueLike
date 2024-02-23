@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using static UnityEditor.PlayerSettings;
 
-public class Enemy : GridEntity
+public class EnemyAlly : GridEntity
 {
 
     [Header("Attacking Variables")]
@@ -18,21 +18,17 @@ public class Enemy : GridEntity
     [SerializeField]
     public List<Attack> possibleAttacks = new List<Attack>();
     [SerializeField]
+    public List<Attack> passiveActions = new List<Attack>();
+    [SerializeField]
     public List<Attack> lastCheckedPossibleAttacks = new List<Attack>();
-    protected PlayerController Player
-    {
-        get { return PlayerManager.Instance.Player; }
-    }
+
+    public GridEntity currentTarget { get { return GridManager.Instance.FindClosestGridEntityFromTargetPosition(targetGridPosition, targetMask); } }
+    [SerializeField]
+    public List<string> targetMask = new List<string>() { "Player", "Ally" };
 
     public override void Start()
     {
         base.Start();
-
-        foreach (Attack attack in possibleAttacks)
-            SetUpAttack(attack);
-
-        foreach (Attack attack in lastCheckedPossibleAttacks)
-            SetUpAttack(attack);
     }
 
     public override void Update()
@@ -50,11 +46,24 @@ public class Enemy : GridEntity
     {
         if (Input.GetMouseButtonDown(0))
         {
-            AttacksPanelSingleton.Instance.Attacks = possibleAttacks;
-            AttacksPanelSingleton.Instance.LastCheckedAttacks = lastCheckedPossibleAttacks;
-            UIManager.Instance.OpenUI(UIPanels.AttackPanel);
+            if (UIManager.Instance.Hand.cardBeingPlayed == null)
+            {
+                AttacksPanelSingleton.Instance.Attacks = possibleAttacks;
+                AttacksPanelSingleton.Instance.LastCheckedAttacks = lastCheckedPossibleAttacks;
+                UIManager.Instance.OpenUI(UIPanels.AttackPanel);
+            }
         }
     }
+
+    public override void SetupEntity()
+    {
+        foreach (Attack attack in possibleAttacks)
+            SetUpAttack(attack);
+
+        foreach (Attack attack in lastCheckedPossibleAttacks)
+            SetUpAttack(attack);
+    }
+
     public virtual IEnumerator DoTurn()
     {
         if (!Stunned)
@@ -68,7 +77,7 @@ public class Enemy : GridEntity
                 if (attackQueue.Count > 0)
                 {
                     // Move towards player default
-                    yield return PerformJabWithAttackInQueue();
+                    yield return StartCoroutine(PerformJabWithAttackInQueue());
                     GridManager.Instance.UpdateEnemyActionTiles();
                 }
                 else
@@ -77,30 +86,20 @@ public class Enemy : GridEntity
 
                     if (attackQueue.Count == 0)
                     {
-                        // Move towards player default
-                        yield return StartCoroutine(PerformMoveAction());
+                        if (!Rooted)
+                        {
+                            // Move towards player default
+                            yield return StartCoroutine(TryPassiveActions());
+                        }
+                        else
+                        {
+                            Rooted = false;
+                        }
                     }
                     else
                     {
                         yield return StartCoroutine(PerformJabWithAttackInQueue());
                     }
-                }
-            }
-            yield return new WaitForSeconds(0.1f);
-            if (attackQueue.Count > 0)
-            {
-                yield return StartCoroutine(PerformJabWithAttackInQueue());
-            }
-            else // Try Move
-            {
-                if (!Rooted)
-                {
-                    // Move towards player default
-                    PerformMoveAction();
-                }
-                else
-                {
-                    Rooted = false;
                 }
             }
         }
@@ -112,33 +111,38 @@ public class Enemy : GridEntity
         yield return null;
     }
 
+    public virtual IEnumerator TryPassiveActions()
+    {
+        yield return StartCoroutine(PerformMoveAction());
+    }
+
     public virtual void TryQueueAttack()
     {
         List<Attack> attacks = new List<Attack>();
         foreach (Attack attack in possibleAttacks)
         {
             AbilityBuilder.GetBuilder(attack.triggerAbility).SetPerformer(this).Build();
-            if (attack.triggerAbility.CanPerform(Player.targetGridPosition))
+            if (attack.triggerAbility.CanPerform(currentTarget.targetGridPosition))
                 attacks.Add(attack);
         }
         if (attacks.Count == 0)
             foreach (Attack attack in lastCheckedPossibleAttacks)
             {
                 AbilityBuilder.GetBuilder(attack.triggerAbility).SetPerformer(this).Build();
-                if (attack.triggerAbility.CanPerform(Player.targetGridPosition))
+                if (attack.triggerAbility.CanPerform(currentTarget.targetGridPosition))
                     attacks.Add(attack);
             }
         if (attacks.Count > 0)
         {
             int index = Random.Range(0, attacks.Count);
-            (new EnqueuAttackAction(this, attacks[index])).Perform();
+            (new EnqueuAttackAction(this, attacks[index]) { TargetPosition = currentTarget.targetGridPosition }).Perform();
         }
     }
 
     public virtual IEnumerator PerformMoveAction()
     {
         pathIndex++;
-        FindPathToPlayer();
+        FindPathToCurrentTarget();
         if (currentPath.Count > 0)
             StepTowardsGridPosition(currentPath);
         else
@@ -152,7 +156,22 @@ public class Enemy : GridEntity
     {
         Vector3 jabDirection = attackQueue.Peek().TargetPosition + new Vector3(0.5f, 0.5f) - sprite.transform.position;
         jabDirection = (new Vector3(jabDirection.x, jabDirection.y, 0)).normalized;
-        yield return StartCoroutine(JabCoroutine(jabDirection, jabSpeed, jabDistance, attackQueue.Dequeue()));
+        List<Ability> abilitiesToPerform = new List<Ability>();
+        if (attackQueue.Peek() is CompositeAction)
+        {
+            abilitiesToPerform = (attackQueue.Dequeue() as CompositeAction).actions;
+        }
+        else
+        {
+            abilitiesToPerform.Add(attackQueue.Dequeue());
+        }
+        foreach (Ability ability in abilitiesToPerform)
+        {
+            GridManager.Instance.HighlightSelectedPositions(ability.GetAbilityPositions(), TileMapType.EnemyAttackPositions, TileType.EnemyAttackTile);
+            yield return StartCoroutine(JabCoroutine(jabDirection, jabSpeed, jabDistance, ability));
+            yield return new WaitForSeconds(0.3f);
+
+        }
         GridManager.Instance.UpdateEnemyActionTiles();
     }
 
@@ -174,24 +193,30 @@ public class Enemy : GridEntity
             currentEnergy++;
     }
 
-    void FindPathToPlayer()
+    void FindPathToCurrentTarget()
     {
         Vector3Int startCell = GridManager.Instance.GetGridPositionFromWorldPoint(this.targetGridPosition);
-        Vector3Int targetCell = GridManager.Instance.GetClosestEmptyNeighbour(this.targetGridPosition, PlayerManager.Instance.Player.targetGridPosition);
-        currentPath = GridManager.Instance.FindPath(startCell, targetCell, new List<string>() { "Player" });
-        string path = "";
-        foreach (var p in currentPath)
-            path += p + " ";
-        Debug.Log(path);
+        Vector3Int targetCell = GridManager.Instance.GetClosestEmptyNeighbour(this.targetGridPosition, currentTarget.targetGridPosition);
+        currentPath = GridManager.Instance.FindPath(startCell, targetCell, targetMask);
         pathIndex = 0;
     }
 
     void SetUpAttack(Attack attack)
     {
         List<Ability> results = new List<Ability>();
-        attack.triggerAbility = AbilityBuilder.GetBuilder(attack.triggerAbility).SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build();
+        attack.triggerAbility = AbilityBuilder.GetBuilder(attack.triggerAbility).SetTargetPosition(currentTarget.targetGridPosition).SetPerformer(this).Build();
         foreach (Ability ability in attack.followUpAbilities)
-            results.Add(AbilityBuilder.GetBuilder(ability).SetTargetPosition(Player.targetGridPosition).SetPerformer(this).Build());
+            results.Add(AbilityBuilder.GetBuilder(ability).SetTargetPosition(currentTarget.targetGridPosition).SetPerformer(this).Build());
         attack.followUpAbilities = results;
+    }
+
+    public override void SubscribeToEvents()
+    {
+        base.SubscribeToEvents();
+    }
+
+    public override void UnsubscribeToEvents()
+    {
+        base.UnsubscribeToEvents();
     }
 }

@@ -7,13 +7,14 @@ using UnityEngine;
 public class PlayerController : GridEntity
 {
     int movementCost = 1;
-    public override int Armour { get { return PlayerManager.Instance.armour; } set { PlayerManager.Instance.armour = value; } }
-    public override int MaxHealth { get { return PlayerManager.Instance.maxPlayerHealth; } set { PlayerManager.Instance.maxPlayerHealth = value; } }
-    public override int Health { get { return PlayerManager.Instance.playerHealth; } set { PlayerManager.Instance.playerHealth = value; } }
-
     // Current Turn
     public Stack<Ability> CurrentActions = new Stack<Ability>();
 
+    public override void Start()
+    {
+        base.Start();
+        UIManager.Instance.UpdateUI();
+    }
 
     public override void Update()
     {
