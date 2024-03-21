@@ -1,9 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
+using static UnityEngine.RuleTile.TilingRuleOutput;
 
 public class GridManager : MonoBehaviour
 {
@@ -389,7 +391,15 @@ public class GridManager : MonoBehaviour
         return result;
     }
 
+    public bool IsEntityOnPosition(Vector3Int gridPosition)
+    {
+        return IsEntityOnPosition(gridPosition, new List<string>());
+    }
 
+    public bool IsEntityOnPosition(Vector3Int gridPosition, List<string> entityMask)
+    {
+        return GetEntityOnPosition(gridPosition, entityMask) != null;
+    }
     public GridEntity GetEntityOnPosition(Vector3Int gridPosition)
     {
         return GetEntityOnPosition(gridPosition, new List<string>());
@@ -417,6 +427,16 @@ public class GridManager : MonoBehaviour
             }
         }
         return null;
+    }
+
+    public bool IsEntityOnPositions(List<Vector3Int> gridPosition)
+    {
+        return IsEntityOnPositions(gridPosition, new List<string>());
+    }
+
+    public bool IsEntityOnPositions(List<Vector3Int> gridPosition, List<string> entityMask)
+    {
+        return GetEntitiesOnPositions(gridPosition, entityMask).Count > 0;
     }
 
     public List<GridEntity> GetEntitiesOnPositions(List<Vector3Int> gridPositions)
@@ -608,6 +628,53 @@ public class GridManager : MonoBehaviour
         }
 
         return positionsInArea;
+    }
+
+    public Vector3Int GetClosestEmptyNeighbour(Vector3Int originPosition, Vector3Int worldPosition)
+    {
+        List<Vector3Int> possiblePositions = GetNeighbours(worldPosition);
+        List<Vector3Int> checkPositions = new List<Vector3Int>();
+        Vector3Int emptyEnemyPos = originPosition;
+        int checkAmount = 0;
+        while (emptyEnemyPos.Equals(originPosition) && checkAmount < 100)
+        {
+            emptyEnemyPos = GetClosestPositionToOrigin(originPosition, possiblePositions.Where(x => !IsEntityOnPosition(x, new List<string>() { "Enemy" })).ToList());
+            if (emptyEnemyPos != originPosition)
+                return emptyEnemyPos;
+            checkPositions.AddRange(possiblePositions);
+            possiblePositions.Clear();
+            checkPositions.ForEach(x => possiblePositions.AddRange(GetNeighbours(x).Where(y => !checkPositions.Contains(y))));
+            checkAmount++;
+        }
+
+        return originPosition;
+    }
+
+    public List<Vector3Int> GetNeighbours(Vector3Int worldPosition)
+    {
+        List<Vector3Int> neighbours = new List<Vector3Int>()
+        {
+            worldPosition + new Vector3Int(1,0),
+            worldPosition + new Vector3Int(-1,0),
+            worldPosition + new Vector3Int(0,1),
+            worldPosition + new Vector3Int(0,-1)
+        };
+        return neighbours;
+    }
+
+    public Vector3Int GetClosestPositionToOrigin(Vector3Int originPosition, List<Vector3Int> positions)
+    {
+        Vector3Int furthestStep = Vector3Int.one * 9999;
+        foreach (var possibleStep in positions)
+        {
+            if (Vector3Int.Distance(originPosition, possibleStep) < Vector3Int.Distance(originPosition, furthestStep))
+            {
+                furthestStep = possibleStep;
+            }
+        }
+        if (furthestStep == Vector3Int.one * 9999)
+            return originPosition;
+        return furthestStep;
     }
 
     public Vector3Int GetGridPositionFromWorldPoint(Vector3 worldPosition)

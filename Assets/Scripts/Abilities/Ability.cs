@@ -13,7 +13,9 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
 
     [SerializeField]
     public List<string> entityMask;
-
+    public int cost = 1;
+    private int beforeEnergy = 0;
+    private int afterEnergy = 0;
     public Ability()
     {
     }
@@ -46,16 +48,28 @@ public abstract class Ability : ScriptableObject, IUndoRedoAction
             (this.Performer as Enemy).attackQueue = newQueue;
             GridManager.Instance.UpdateEnemyActionTiles();
         }
+        else if (Performer == PlayerManager.Instance.Player)
+        {
+            PlayerManager.Instance.CurrentEnergy = beforeEnergy;
+        }
     }
 
     public virtual void Perform()
     {
         UndoRedoManager.Instance.AddUndoAction(this);
+        if (Performer != PlayerManager.Instance.Player && Performer != null)
+            Performer.currentEnergy += cost;
+        else if (Performer == PlayerManager.Instance.Player)
+        {
+            beforeEnergy = PlayerManager.Instance.CurrentEnergy;
+            PlayerManager.Instance.CurrentEnergy -= cost;
+            afterEnergy = PlayerManager.Instance.CurrentEnergy;
+        }
     }
 
     public virtual bool CanPerform(Vector3Int targetPosition)
     {
-        TargetPosition = targetPosition;
+        TargetPosition = targetPosition * new Vector3Int(1, 1, 0);
         return CanPerform();
     }
 
@@ -153,6 +167,10 @@ public abstract class AbilityBuilder : IAbilityBuilder
         return this;
     }
     public virtual AbilityBuilder SetDeadRange(int range)
+    {
+        return this;
+    }
+    public virtual AbilityBuilder SetCost(int cost)
     {
         return this;
     }

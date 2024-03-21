@@ -4,9 +4,11 @@ using UnityEngine;
 
 public class GridEntity : Entity
 {
+    [Header("Entity Energy and Pathing")]
+    public int pathIndex = 0;
+    public List<Vector3Int> currentPath = new List<Vector3Int>();
     public float moveSpeed = 5f; // Adjust this value to control movement speed
     public Vector3Int targetGridPosition;
-    public List<Vector3Int> currentPath;
     public Vector3Int lastTargetedDirection;
 
     public override void Start()

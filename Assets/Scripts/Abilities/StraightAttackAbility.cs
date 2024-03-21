@@ -79,16 +79,16 @@ public class StraightAttackAbility : Ability
             attackSequance[target].Add(AttackAttributes.BeforeArmour, target.Armour);
 
             if (pierce)
-                target.PierceDamage(damage + Performer.Statuses[Status.Strength]);
+                target.PierceDamage(damage + Performer.GetStatus(Status.Strength));
             else
-                target.Damage(damage + Performer.Statuses[Status.Strength]);
+                target.Damage(damage + Performer.GetStatus(Status.Strength));
 
             if (drain)
             {
                 Performer.Heal(attackSequance[target][AttackAttributes.BeforeHeatlh] - target.Health);
             }
 
-            target.Damage(damage + Performer.Statuses[Status.Strength]);
+            target.Damage(damage + Performer.GetStatus(Status.Strength));
             attackSequance[target].Add(AttackAttributes.AfterHeatlh, target.Health);
             attackSequance[target].Add(AttackAttributes.AfterArmour, target.Armour);
         }

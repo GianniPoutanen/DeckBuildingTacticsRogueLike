@@ -8,6 +8,10 @@ using UnityEngine.Timeline;
 public abstract class Entity : MonoBehaviour
 {
     public bool Enabled = true;
+    [Header("Turn Action Energy")]
+    public int maxEnergy = 1;
+    public int currentEnergy;
+
     [Header("Base Entity Stats")]
     public bool CanDamage;
     [SerializeField]
@@ -56,6 +60,12 @@ public abstract class Entity : MonoBehaviour
         UIManager.Instance.UpdateUI();
     }
 
+    public virtual void SetStatus(Status status, int amount)
+    {
+        if (!Statuses.ContainsKey(status))
+            Statuses.Add(status, 0);
+         Statuses[status] = amount;
+    }
     public virtual int GetStatus(Status status)
     {
         if (!Statuses.ContainsKey(status))
@@ -115,7 +125,7 @@ public abstract class Entity : MonoBehaviour
 
     public virtual void Damage(int amount)
     {
-        int totalAmount = ((amount * Statuses[Status.Weaken] > 0 ? 2 : 1) - Statuses[Status.Shielded]) * Statuses[Status.Marked] > 0 ? 3 : 1;
+        int totalAmount = ((amount * GetStatus(Status.Weaken) > 0 ? 2 : 1) - GetStatus(Status.Shielded)) * GetStatus(Status.Marked)> 0 ? 3 : 1;
         int leftOver = totalAmount;
         if (Armour > 0)
         {
@@ -137,7 +147,7 @@ public abstract class Entity : MonoBehaviour
                 Health -= leftOver;
         }
         // Hacky way of getting rid of marked but allowing undo
-        if (Statuses[Status.Marked] > 0 && this is GridEntity)
+        if (GetStatus(Status.Marked) > 0 && this is GridEntity)
             UndoRedoManager.Instance.AddUndoAction(new GiveStatusAbility() { Performer = (GridEntity)this, amount = -1, status = Status.Marked });
 
         DeathCheck();
@@ -186,7 +196,9 @@ public abstract class Entity : MonoBehaviour
             }
 
             if (ability != null)
+            {
                 ability.Perform();
+            }
             // Wait for a short duration
             yield return new WaitForSeconds(0.01f);
             // Move back to the original position

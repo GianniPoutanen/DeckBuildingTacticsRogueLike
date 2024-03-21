@@ -68,9 +68,9 @@ public class SimpleAttackAbility : Ability
             beforeArmour = target.Armour;
             beforeHealth = target.Health;
             if (pierce)
-                target.PierceDamage(damage + Performer.Statuses[Status.Strength]);
+                target.PierceDamage(damage + Performer.GetStatus(Status.Strength));
             else
-                target.Damage(damage + Performer.Statuses[Status.Strength]);
+                target.Damage(damage + Performer.GetStatus(Status.Strength));
 
             if (drain)
             {

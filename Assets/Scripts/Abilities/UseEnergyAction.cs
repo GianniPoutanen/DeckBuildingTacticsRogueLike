@@ -5,31 +5,24 @@ public class UseEnergyAction : Ability
 {
     private int newEnergyAmount;
     private int oldEnergyAmount;
-    public int amount = 0;
 
     public override void Perform()
     {
         base.Perform();
-        oldEnergyAmount = PlayerManager.Instance.CurrentEnergy;
-        newEnergyAmount = PlayerManager.Instance.CurrentEnergy - amount;
-        PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
-        EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 
     public override void Redo()
     {
-        PlayerManager.Instance.CurrentEnergy = newEnergyAmount;
-        EventManager.Instance.InvokeEvent(EventType.UpdateUI);
+        base.Redo();
     }
 
     public override void Undo()
     {
-        PlayerManager.Instance.CurrentEnergy = oldEnergyAmount;
-        EventManager.Instance.InvokeEvent(EventType.UpdateUI);
+        base.Undo();
     }
 
     public override bool CanPerform(Vector3Int position)
     {
-        return PlayerManager.Instance.CurrentEnergy - amount >= 0;
+        return PlayerManager.Instance.CurrentEnergy - cost >= 0;
     }
 }

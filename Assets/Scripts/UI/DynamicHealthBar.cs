@@ -10,8 +10,12 @@ public class DynamicHealthBar : MonoBehaviour
     public Transform entityTransform; // Reference to the entity's transform
     public Entity entity;
 
+    public float showTime = 1;
+    private float hideTimer;
+
     void Start()
     {
+        hideTimer = showTime;
         UpdateHealthBar();
         bars.gameObject.SetActive(false); // Initially hide the health bar
     }
@@ -19,12 +23,13 @@ public class DynamicHealthBar : MonoBehaviour
     void Update()
     {
         // Check if the entity is under the mouse
-        if (IsEntityUnderMouse())
+        if (IsEntityUnderMouse() || hideTimer < showTime)
         {
             UpdateHealthBar();
             // Activate and update the health bar position
             bars.gameObject.SetActive(true);
             UpdateHealthBarPosition();
+            hideTimer += Time.deltaTime;
         }
         else
         {
@@ -37,7 +42,10 @@ public class DynamicHealthBar : MonoBehaviour
     {
         // Update the UI Slider value based on the current health
         healthSlider.value = (((float)entity.Health) / ((float)entity.MaxHealth));
-        armourText.text = entity.Armour.ToString();
+        if (entity.Armour == 0)
+            armourText.text = "";
+        else
+            armourText.text = entity.Armour.ToString();
     }
     void UpdateHealthBarPosition()
     {
@@ -53,9 +61,10 @@ public class DynamicHealthBar : MonoBehaviour
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         RaycastHit2D hit = Physics2D.Raycast(mousePosition, Vector2.zero);
 
-        if (hit.collider != null)
+        if (hit.collider != null && hit.collider.transform.root == entityTransform)
         {
-            return hit.collider.transform.root == entityTransform;
+            hideTimer = 0;
+            return true;
         }
 
         return false;

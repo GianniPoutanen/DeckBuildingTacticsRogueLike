@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 383c66ae0a0e57c43b8a441d5e76adda, type: 3}
   m_Name: Attack_3
   m_EditorClassIdentifier: 
-  _performer: {fileID: 0}
   entityMask: []
-  target: {fileID: 0}
   damage: 3
-  targetPosition: {x: 0, y: 0, z: 0}
+  global: 0
+  range: 1

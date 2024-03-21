@@ -9,12 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f866d54e6d2d3345bfacf05d3059a53, type: 3}
-  m_Name: Step Away
+  m_Script: {fileID: 11500000, guid: 383c66ae0a0e57c43b8a441d5e76adda, type: 3}
+  m_Name: Swipe
   m_EditorClassIdentifier: 
-  entityMask:
-  - Player
-  - Enemy
-  triggerRange: 1
-  jumpDistance: 2
-  forceStep: 0
+  entityMask: []
+  damage: 2
+  global: 0
+  range: 1

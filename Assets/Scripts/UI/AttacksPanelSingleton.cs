@@ -31,6 +31,7 @@ public class AttacksPanelSingleton : UIElement
 
     [SerializeField]
     public List<Attack> Attacks { get; set; } = new List<Attack>();
+    public List<Attack> LastCheckedAttacks { get; set; } = new List<Attack>();
     public AttacksPanelEntry attackPanelEntryObject;
     public List<AttacksPanelEntry> entries = new List<AttacksPanelEntry>();
     public RectTransform content;
@@ -47,11 +48,6 @@ public class AttacksPanelSingleton : UIElement
         BuildAttackPanel();
     }
 
-    public void BuildAttackPanel(List<Attack> attacks)
-    {
-        Attacks = attacks;
-        BuildAttackPanel();
-    }
 
     public void BuildAttackPanel()
     {
@@ -61,6 +57,13 @@ public class AttacksPanelSingleton : UIElement
 
 
         foreach (Attack attack in Attacks)
+        {
+            AttacksPanelEntry attackPanelEntry = NewEntry();
+            attackPanelEntry.attack = attack;
+            attackPanelEntry.BuildAttackPanel();
+        }
+
+        foreach (Attack attack in LastCheckedAttacks)
         {
             AttacksPanelEntry attackPanelEntry = NewEntry();
             attackPanelEntry.attack = attack;

@@ -13,7 +13,8 @@ public class GiveStatusAbility : Ability
     {
         base.Undo();
         var target = GridManager.Instance.GetEntityOnPosition(TargetPosition, entityMask);
-        target.Statuses[status] = beforeStatusAmount;
+        if (target != null)
+            target.SetStatus(status, beforeStatusAmount);
     }
 
     public override void Redo()
@@ -28,9 +29,9 @@ public class GiveStatusAbility : Ability
         if (target != null)
         {
             Debug.Log($"{Performer.name} gives status {status.ToString()} to {target.name} of amount {amount}.");
-            beforeStatusAmount = target.Statuses[status];
+            beforeStatusAmount = target.GetStatus(status);
             target.GiveStatus(status, amount);
-            afterStatusAmount = target.Statuses[status];
+            afterStatusAmount = target.GetStatus(status);
             UIManager.Instance.UpdateUI();
         }
     }
