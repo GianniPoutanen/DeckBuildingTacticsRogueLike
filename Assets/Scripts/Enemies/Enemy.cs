@@ -51,7 +51,7 @@ public class Enemy : GridEntity
         if (Input.GetMouseButtonDown(0))
         {
             AttacksPanelSingleton.Instance.Attacks = possibleAttacks;
-            UIManager.Instance.OpenUI(UIPanels.AttackPanel);
+            UIManager.Instance.OpenUI(UIPanels.EnemyAttacks);
         }
     }
     public virtual IEnumerator DoTurn()

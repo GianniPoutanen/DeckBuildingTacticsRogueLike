@@ -41,11 +41,13 @@ public class PlayerManager : MonoBehaviour
     public int maxPlayerHealth = 40;
     public int playerHealth = 40;
     public int armour = 0;
+    public int nextTurnEnergy = 0;
     public int maxEnergy = 2;
     private int _energy = 2;
 
     public int maxMovement = 2;
     public int numMovement = 2;
+
 
     [SerializeField]
     [Header("Decks")]
@@ -53,6 +55,7 @@ public class PlayerManager : MonoBehaviour
     [SerializeField]
     private Deck _activeDeck;
     [SerializeField]
+
     public Deck activeDeck
     {
         get
@@ -176,7 +179,8 @@ public class PlayerManager : MonoBehaviour
 
     public void EndEnemyTurnHandler()
     {
-        CurrentEnergy = maxEnergy + Player.Statuses[Status.Hasten];
+        CurrentEnergy = maxEnergy + Player.Statuses[Status.Hasten] + nextTurnEnergy;
+        nextTurnEnergy = 0;
         EventManager.Instance.InvokeEvent(EventType.UpdateUI);
     }
 
