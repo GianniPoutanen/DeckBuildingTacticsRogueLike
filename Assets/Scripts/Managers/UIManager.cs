@@ -77,6 +77,7 @@ public class UIManager : MonoBehaviour
     [Header("Panels")]
     public AttacksPanelSingleton attackPanel;
     public GameObject victoryPanel;
+    public UpgradeCardPanelSingleton upgradeCardPanel;
 
     public Stack<UIElement> panelStack = new Stack<UIElement>();
 
@@ -119,7 +120,7 @@ public class UIManager : MonoBehaviour
     {
         switch (panel)
         {
-            case UIPanels.AttackPanel:
+            case UIPanels.EnemyAttacks:
                 attackPanel.Open();
                 panelStack.Push(attackPanel);
                 break;

@@ -64,7 +64,8 @@ public enum UnlockType
 
 public enum UIPanels
 {
-    AttackPanel
+    EnemyAttacks,
+    UpgradeCard
 }
 
 public enum AbilityTypes
@@ -100,4 +101,9 @@ public enum Status
     Stunned,
     Rooted,
     Marked
+}
+
+public enum Relics
+{
+
 }
