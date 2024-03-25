@@ -49,10 +49,13 @@ public class PlayerManager : MonoBehaviour
             if (_activeDeck == null)
             {
                 _activeDeck = new Deck();
-                var newDeck =  Instantiate(instance.playerDeck);
-                foreach (Card card in newDeck.Cards)
-                    _activeDeck.AddCard(new Card(card));
-                _activeDeck.Shuffle();
+                if (instance.playerDeck != null)
+                {
+                    var newDeck = Instantiate(instance.playerDeck);
+                    foreach (Card card in newDeck.Cards)
+                        _activeDeck.AddCard(new Card(card));
+                    _activeDeck.Shuffle();
+                }
             }
             return _activeDeck;
         }
@@ -87,7 +90,6 @@ public class PlayerManager : MonoBehaviour
 
     private void Start()
     {
-        CurrentEnergy = Player.maxEnergy;
         // You can perform any necessary initialization here
         Player = GameObject.FindGameObjectWithTag("Player")?.GetComponent<PlayerController>();
         SubscribeToEvents();

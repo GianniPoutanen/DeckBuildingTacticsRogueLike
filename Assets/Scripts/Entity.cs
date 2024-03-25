@@ -44,6 +44,7 @@ public abstract class Entity : MonoBehaviour
     {
         EventManager.Instance.InvokeEvent<Entity>(EventType.EntitySpawned, this);
         SubscribeToEvents();
+        currentEnergy = maxEnergy;
         Health = MaxHealth;
     }
 

@@ -68,6 +68,10 @@ public class EnemyManager : MonoBehaviour
                 if (enemies.Count != enemyCount) enemyCount--;
             }
         }
+        else
+        {
+            EventManager.Instance.InvokeEvent(EventType.AllEnemiesKilled);
+        }
         CameraFocalPointSingleton.Instance.SetFocal(PlayerManager.Instance.Player.gameObject);
         EventManager.Instance.InvokeEvent(EventType.EndEnemyTurn);
         yield return null;

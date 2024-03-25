@@ -164,26 +164,29 @@ public class Hand : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 
     public void SpawnCard(Card card)
     {
-        // Instantiate a new CardUI prefab
-        GameObject cardObject = Instantiate(cardPrefab, transform);
+        if (card != null)
+        {
+            // Instantiate a new CardUI prefab
+            GameObject cardObject = Instantiate(cardPrefab, transform);
 
-        // Set the card's position in the hand
-        Vector2 newPosition = CalculateCardPosition(cardsInHand.Count);
-        cardObject.GetComponent<RectTransform>().anchoredPosition = newPosition;
+            // Set the card's position in the hand
+            Vector2 newPosition = CalculateCardPosition(cardsInHand.Count);
+            cardObject.GetComponent<RectTransform>().anchoredPosition = newPosition;
 
-        // Set the target position for the card
-        CardUI cardUI = cardObject.GetComponent<CardUI>();
-        cardUI.targetLocalPosition = newPosition;
+            // Set the target position for the card
+            CardUI cardUI = cardObject.GetComponent<CardUI>();
+            cardUI.targetLocalPosition = newPosition;
 
-        // Set the card data
-        cardUI.card = card;
-        cardUI.sizeFactor = UIManager.Instance.CardSpawnSize;
+            // Set the card data
+            cardUI.card = card;
+            cardUI.sizeFactor = UIManager.Instance.CardSpawnSize;
 
-        if (cardSpawnPosition != null)
-            cardUI.transform.position = cardSpawnPosition.position;
+            if (cardSpawnPosition != null)
+                cardUI.transform.position = cardSpawnPosition.position;
 
-        // Add the card to the list
-        cardsInHand.Add(cardUI);
+            // Add the card to the list
+            cardsInHand.Add(cardUI);
+        }
     }
 
     private Vector2 CalculateCardPosition(int cardIndex)

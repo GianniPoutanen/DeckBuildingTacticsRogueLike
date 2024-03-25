@@ -116,13 +116,7 @@ public class GridManager : MonoBehaviour
                     break;
                 }
             }
-            if (!enemyFound)
-            {
-                EventManager.Instance.InvokeEvent(EventType.AllEnemiesKilled);
-                AllEnemiesKilled = true;
-            }
         }
-
     }
 
 
@@ -333,8 +327,15 @@ public class GridManager : MonoBehaviour
         UpdateEnemyActionTiles();
     }
 
+
+    public void AllEnemiesKilledHandler()
+    {
+        AllEnemiesKilled = true;
+    }
+
     public void SubscribeToEvents()
     {
+        EventManager.Instance.AddListener(EventType.AllEnemiesKilled, AllEnemiesKilledHandler);
         EventManager.Instance.AddListener<Entity>(EventType.EntitySpawned, EntitySpawnedHandler);
         EventManager.Instance.AddListener<Entity>(EventType.EntityDestroyed, EntityDestroyedHandler);
         EventManager.Instance.AddListener<Ability>(EventType.AttackQueued, AddQueuedAttackHandler);
@@ -344,6 +345,7 @@ public class GridManager : MonoBehaviour
 
     public void UnsubscribeToEvents()
     {
+        EventManager.Instance.RemoveListener(EventType.AllEnemiesKilled, AllEnemiesKilledHandler);
         EventManager.Instance.RemoveListener<Entity>(EventType.EntitySpawned, EntitySpawnedHandler);
         EventManager.Instance.RemoveListener<Entity>(EventType.EntityDestroyed, EntityDestroyedHandler);
         EventManager.Instance.RemoveListener<Ability>(EventType.AttackQueued, AddQueuedAttackHandler);

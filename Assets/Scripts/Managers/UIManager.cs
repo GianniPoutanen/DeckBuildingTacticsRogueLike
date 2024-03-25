@@ -5,6 +5,7 @@ using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
@@ -175,6 +176,13 @@ public class UIManager : MonoBehaviour
 
 
     #region Event Handlers
+
+    public void UnloadScene()
+    {
+        Debug.Log("Unload active encounter");
+        SceneManager.UnloadSceneAsync(SceneManager.GetSceneAt(0));
+    }
+
     public void SubscribeToEvents()
     {
         EventManager.Instance.AddListener(EventType.UpdateUI, UpdateUI);

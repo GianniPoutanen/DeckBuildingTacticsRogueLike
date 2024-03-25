@@ -6,13 +6,16 @@ using UnityEngine;
 
 public class PlayerController : GridEntity
 {
-    int movementCost = 1;
     // Current Turn
     public Stack<Ability> CurrentActions = new Stack<Ability>();
 
     public override void Start()
     {
         base.Start();
+        //Insure PlayerManager Exhists
+        if (GameObject.FindAnyObjectByType<PlayerManager>() == null)
+            Debug.Log($"Spawned {PlayerManager.Instance.name}");
+        CameraFocalPointSingleton.Instance.SetFocal(this.gameObject);
         UIManager.Instance.UpdateUI();
     }
 
